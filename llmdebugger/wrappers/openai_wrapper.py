@@ -1,0 +1,28 @@
+# llmdebugger/wrappers/openai_wrapper.py
+
+from datetime import datetime
+from llmdebugger.logger import log_call
+from llmdebugger.session import compute_session_id
+
+def wrap_openai(client, logging_account_id: str):
+    original_create = client.chat.completions.create
+
+    def wrapped_create(*args, **kwargs):
+        request_start_timestamp = datetime.now().astimezone().isoformat()
+        response = original_create(*args, **kwargs)
+        request_end_timestamp = datetime.now().astimezone().isoformat()
+
+        log_call(
+            provider="openai",
+            args=args,
+            kwargs=kwargs,
+            response=response,
+            request_start_timestamp=request_start_timestamp,
+            request_end_timestamp=request_end_timestamp,
+            logging_account_id=logging_account_id,
+        )
+
+        return response
+
+    client.chat.completions.create = wrapped_create
+    return client

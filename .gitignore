@@ -1,0 +1,27 @@
+# Ignore Python cache and compiled files
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+*.log
+
+# Ignore virtual environment
+venv/
+.env
+.env.*
+
+# Ignore system-specific files
+.DS_Store
+
+# Ignore test cache
+.pytest_cache/
+
+# Ignore static analysis or coverage tools
+.coverage
+htmlcov/
+.mypy_cache/
+.cache/
+.tox/
+
+# VS Code settings (optional)
+.vscode/

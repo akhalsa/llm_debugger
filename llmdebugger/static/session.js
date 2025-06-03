@@ -8,6 +8,18 @@ function computeLatency(entry) {
   }
 }
 
+function escape(str) {
+  return (str || "").replace(/[&<>"']/g, function (m) {
+    return {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    }[m];
+  });
+}
+
 function renderEntry(index) {
   currentIndex = index;
   const entry = sessionData[index];
@@ -131,18 +143,6 @@ async function fetchSession(sessionId) {
     console.error("Failed to load session:", err);
     document.getElementById("session-content").textContent = "⚠️ Failed to load session data.";
   }
-}
-
-function escape(str) {
-  return (str || "").replace(/[&<>"']/g, function (m) {
-    return {
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;"
-    }[m];
-  });
 }
 
 document.addEventListener("DOMContentLoaded", () => {

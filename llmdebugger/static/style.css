@@ -145,3 +145,28 @@ li[data-role="tool"] .role-label { color: purple; }
   font-family: monospace;
   white-space: pre-wrap;
 }
+
+.context-section {
+  margin-top: 1rem;
+}
+
+.toggle-context {
+  background: none;
+  border: none;
+  color: #007bff;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0.25rem 0;
+  text-align: left;
+}
+
+.context-list {
+  margin-top: 0.5rem;
+}
+
+li.context-message,
+li.context-message * {
+  font-size: 0.7rem !important;
+  line-height: 1.25;
+  opacity: 0.85;
+}

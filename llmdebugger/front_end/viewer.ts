@@ -31,6 +31,7 @@ function escapeHtml(str: string): string {
   })[m] || m);
 }
 
+
 document.addEventListener("DOMContentLoaded", async () => {
   const container = document.getElementById("entry-container")!;
   const prevBtn = document.getElementById("prev-btn") as HTMLButtonElement;
@@ -61,6 +62,34 @@ document.addEventListener("DOMContentLoaded", async () => {
       container.innerHTML = `
         <div>
           <div><strong>Time:</strong> ${entry.startTime}</div>
+          <div class="context-section">
+            <button class="toggle-context">Show Context Messages</button>
+            <ul class="context-list" style="display: none;">
+              ${entry.contextMessages.map(m => `
+                <li data-role="${m.role}" class="context-message">
+                  <div class="role-label">${capitalize(m.role)}</div>
+                  <div class="message-body">
+                    ${
+                      m.tool_calls?.length
+                        ? m.tool_calls.map(tc => `
+                            <div class="tool-call">
+                              <strong>Tool:</strong> ${escapeHtml(tc.functionName)}
+                              <pre>${escapeHtml(typeof tc.arguments === "string" ? tc.arguments : JSON.stringify(tc.arguments, null, 2))}</pre>
+                            </div>
+                          `).join("")
+                        : m.role === "tool" && m.content
+                          ? `<div class="tool-response">
+                              <div class="tool-call-label">Tool Response:</div>
+                              <pre class="tool-response-body">${escapeHtml(prettyPrintJson(m.content))}</pre>
+                            </div>`
+                          : escapeHtml(m.content || "[no content]")
+                    }
+                  </div>
+                </li>
+              `).join("")}
+            </ul>
+          </div>
+
           <div><strong>New Messages:</strong></div>
           <ul>
             ${entry.newMessages
@@ -89,10 +118,20 @@ document.addEventListener("DOMContentLoaded", async () => {
           </ul>
         </div>
       `;
+      const toggleBtn = document.querySelector(".toggle-context") as HTMLButtonElement;
+      toggleBtn?.addEventListener("click", () => {
+        const list = document.querySelector(".context-list") as HTMLElement;
+        if (!list || !toggleBtn) return;
+
+        const isOpen = list.style.display !== "none";
+        list.style.display = isOpen ? "none" : "block";
+        toggleBtn.textContent = isOpen ? "Show Context Messages" : "Hide Context Messages";
+      });
 
       prevBtn.disabled = currentIndex === 0;
       nextBtn.disabled = currentIndex === parsed.length - 1;
     }
+    
 
     prevBtn.addEventListener("click", () => {
       if (currentIndex > 0) {

@@ -37,6 +37,35 @@ document.addEventListener("DOMContentLoaded", () => __awaiter(void 0, void 0, vo
             container.innerHTML = `
         <div>
           <div><strong>Time:</strong> ${entry.startTime}</div>
+          <div class="context-section">
+            <button class="toggle-context">Show Context Messages</button>
+            <ul class="context-list" style="display: none;">
+              ${entry.contextMessages.map(m => {
+                var _a;
+                return `
+                <li data-role="${m.role}" class="context-message">
+                  <div class="role-label">${capitalize(m.role)}</div>
+                  <div class="message-body">
+                    ${((_a = m.tool_calls) === null || _a === void 0 ? void 0 : _a.length)
+                    ? m.tool_calls.map(tc => `
+                            <div class="tool-call">
+                              <strong>Tool:</strong> ${escapeHtml(tc.functionName)}
+                              <pre>${escapeHtml(typeof tc.arguments === "string" ? tc.arguments : JSON.stringify(tc.arguments, null, 2))}</pre>
+                            </div>
+                          `).join("")
+                    : m.role === "tool" && m.content
+                        ? `<div class="tool-response">
+                              <div class="tool-call-label">Tool Response:</div>
+                              <pre class="tool-response-body">${escapeHtml(prettyPrintJson(m.content))}</pre>
+                            </div>`
+                        : escapeHtml(m.content || "[no content]")}
+                  </div>
+                </li>
+              `;
+            }).join("")}
+            </ul>
+          </div>
+
           <div><strong>New Messages:</strong></div>
           <ul>
             ${entry.newMessages
@@ -64,6 +93,15 @@ document.addEventListener("DOMContentLoaded", () => __awaiter(void 0, void 0, vo
           </ul>
         </div>
       `;
+            const toggleBtn = document.querySelector(".toggle-context");
+            toggleBtn === null || toggleBtn === void 0 ? void 0 : toggleBtn.addEventListener("click", () => {
+                const list = document.querySelector(".context-list");
+                if (!list || !toggleBtn)
+                    return;
+                const isOpen = list.style.display !== "none";
+                list.style.display = isOpen ? "none" : "block";
+                toggleBtn.textContent = isOpen ? "Show Context Messages" : "Hide Context Messages";
+            });
             prevBtn.disabled = currentIndex === 0;
             nextBtn.disabled = currentIndex === parsed.length - 1;
         }

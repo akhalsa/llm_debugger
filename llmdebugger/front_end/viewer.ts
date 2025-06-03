@@ -1,3 +1,5 @@
+// log_viewer_debugged.ts
+
 type Role = "system" | "user" | "assistant" | "tool";
 
 type ToolCall = {
@@ -51,10 +53,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         : "Unknown";
 
       const allMessages = extractMessages(entry);
-      const contextMessages = i === 0
-        ? [allMessages[0]]
-        : [...prevMessages];
-
+      const contextMessages = i === 0 ? [allMessages[0]] : [...prevMessages];
       const newMessages = i === 0
         ? allMessages.slice(1)
         : allMessages.filter((m, j) => JSON.stringify(m) !== JSON.stringify(prevMessages[j]));
@@ -75,44 +74,53 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     let currentIndex = 0;
-    renderEntry(parsed[currentIndex], currentIndex, parsed.length);
+    renderEntry(currentIndex);
 
-    function renderEntry(entry: ViewModelEntry, index: number, total: number) {
-      container!.innerHTML = `
-        <h2>Session Entry ${index + 1} / ${total}</h2>
-        <p><strong>${entry.startTime}</strong> · ${entry.latencyMs}ms · ${entry.metadata.model} (${entry.metadata.provider})</p>
+    function renderEntry(index: number) {
+      currentIndex = index;
+      const entry = parsed[index];
+      const prevEntry = parsed[index - 1];
+      const app = document.getElementById("session-content");
+      if (!app) {
+        console.error("Missing container #session-content");
+        return;
+      }
 
-        <details open>
-          <summary><strong>Context Messages</strong></summary>
-          <div style="margin-left: 1em">
-            ${entry.contextMessages.map(renderMessage).join("")}
+      const contextHtml = entry.contextMessages.map(renderMessage).join("");
+      const newMessagesHtml = entry.newMessages.map(renderMessage).join("");
+
+      app.innerHTML = `
+        <div style="font-family: sans-serif; max-width: 800px; margin: auto;">
+          <h2>Entry ${entry.index + 1} of ${parsed.length}</h2>
+
+          <details style="margin-bottom: 1em;" ${entry.contextMessages.length ? "open" : ""}>
+            <summary>🧠 Context (${entry.contextMessages.length} messages)</summary>
+            <div style="margin-left: 1em">${contextHtml || "<p>No prior context.</p>"}</div>
+          </details>
+
+          <h3>💬 New Messages</h3>
+          <div style="margin-left: 1em">${newMessagesHtml || "<p>No new messages in this turn.</p>"}</div>
+
+          <details style="margin-top: 1em;">
+            <summary>⏱️ Metadata</summary>
+            <p>
+              <strong>Start Time:</strong> ${entry.startTime}<br>
+              <strong>Latency:</strong> ${entry.latencyMs} ms<br>
+              <strong>Model:</strong> ${entry.metadata.model}<br>
+              <strong>Provider:</strong> ${entry.metadata.provider}
+            </p>
+          </details>
+
+          <div style="margin-top: 20px;">
+            <button id="prev-btn" ${index === 0 ? "disabled" : ""}>← Back</button>
+            <button id="next-btn" ${index >= parsed.length - 1 ? "disabled" : ""}>Next →</button>
           </div>
-        </details>
-
-        <h3>New Messages</h3>
-        <div style="margin-left: 1em">
-          ${entry.newMessages.map(renderMessage).join("")}
-        </div>
-
-        <div style="margin-top: 16px;">
-          <button id="prev" ${index === 0 ? "disabled" : ""}>⬅️ Previous</button>
-          <button id="next" ${index === total - 1 ? "disabled" : ""}>Next ➡️</button>
         </div>
       `;
 
-      document.getElementById("prev")?.addEventListener("click", () => {
-        if (currentIndex > 0) {
-          currentIndex -= 1;
-          renderEntry(parsed[currentIndex], currentIndex, parsed.length);
-        }
-      });
-
-      document.getElementById("next")?.addEventListener("click", () => {
-        if (currentIndex < parsed.length - 1) {
-          currentIndex += 1;
-          renderEntry(parsed[currentIndex], currentIndex, parsed.length);
-        }
-      });
+      document.getElementById("prev-btn")?.addEventListener("click", () => renderEntry(index - 1));
+      document.getElementById("next-btn")?.addEventListener("click", () => renderEntry(index + 1));
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   } catch (err) {
     console.error("Error loading session:", err);
@@ -137,11 +145,13 @@ function extractMessages(entry: any): ViewModelMessage[] {
     role: m.role,
     content: m.content ?? null,
     tool_call_id: m.tool_call_id,
-    tool_calls: m.tool_calls?.map((tc: any) => ({
-      id: tc.id,
-      functionName: tc.function?.name,
-      arguments: tc.function?.arguments,
-    })),
+    tool_calls: Array.isArray(m.tool_calls)
+      ? m.tool_calls.map((tc: any) => ({
+          id: tc.id,
+          functionName: tc.function?.name,
+          arguments: tc.function?.arguments,
+        }))
+      : undefined,
   }));
 }
 

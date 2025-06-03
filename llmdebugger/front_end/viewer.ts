@@ -25,6 +25,12 @@ type ViewModelEntry = {
   newMessages: ViewModelMessage[];
 };
 
+function escapeHtml(str: string): string {
+  return (str || "").replace(/[&<>"']/g, m => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  })[m] || m);
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   const container = document.getElementById("session-content");
   if (!container) return;
@@ -40,85 +46,58 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    const parsed: ViewModelEntry[] = [];
-    let prevMessages: ViewModelMessage[] = [];
+    const parsed = logEntries.map((entry, i) => {
+      const prev = i > 0 ? logEntries[i - 1] : undefined;
+      return parseLogEntry(entry, i, prev);
+    });
 
-    for (let i = 0; i < logEntries.length; i++) {
-      const entry = logEntries[i];
-      const latency = entry.latency_ms ?? computeLatency(entry);
-      const startTime = entry.start_time
-        ? new Date(entry.start_time).toLocaleString()
-        : "Unknown";
-
-      const allMessages = extractMessages(entry);
-      const contextMessages = i === 0
-        ? [allMessages[0]]
-        : [...prevMessages];
-
-      const newMessages = i === 0
-        ? allMessages.slice(1)
-        : allMessages.filter((m, j) => JSON.stringify(m) !== JSON.stringify(prevMessages[j]));
-
-      parsed.push({
-        index: i,
-        startTime,
-        latencyMs: latency,
-        metadata: {
-          model: entry.model || "unknown",
-          provider: entry.provider || "unknown",
-        },
-        contextMessages,
-        newMessages,
-      });
-
-      prevMessages = allMessages;
-    }
-
-    let currentIndex = 0;
-    renderEntry(parsed[currentIndex], currentIndex, parsed.length);
-
-    function renderEntry(entry: ViewModelEntry, index: number, total: number) {
-      container!.innerHTML = `
-        <h2>Session Entry ${index + 1} / ${total}</h2>
-        <p><strong>${entry.startTime}</strong> · ${entry.latencyMs}ms · ${entry.metadata.model} (${entry.metadata.provider})</p>
-
-        <details open>
-          <summary><strong>Context Messages</strong></summary>
-          <div style="margin-left: 1em">
-            ${entry.contextMessages.map(renderMessage).join("")}
-          </div>
-        </details>
-
-        <h3>New Messages</h3>
-        <div style="margin-left: 1em">
-          ${entry.newMessages.map(renderMessage).join("")}
-        </div>
-
-        <div style="margin-top: 16px;">
-          <button id="prev" ${index === 0 ? "disabled" : ""}>⬅️ Previous</button>
-          <button id="next" ${index === total - 1 ? "disabled" : ""}>Next ➡️</button>
-        </div>
-      `;
-
-      document.getElementById("prev")?.addEventListener("click", () => {
-        if (currentIndex > 0) {
-          currentIndex -= 1;
-          renderEntry(parsed[currentIndex], currentIndex, parsed.length);
-        }
-      });
-
-      document.getElementById("next")?.addEventListener("click", () => {
-        if (currentIndex < parsed.length - 1) {
-          currentIndex += 1;
-          renderEntry(parsed[currentIndex], currentIndex, parsed.length);
-        }
-      });
-    }
+    container.innerHTML = `<pre>${escapeHtml(JSON.stringify(parsed, null, 2))}</pre>`;
   } catch (err) {
     console.error("Error loading session:", err);
     container.textContent = "⚠️ Failed to load session data.";
   }
 });
+
+function parseLogEntry(entry: any, index: number, prevEntry?: any): ViewModelEntry {
+  const latency = entry.latency_ms ?? computeLatency(entry);
+  const startTime = entry.start_time
+    ? new Date(entry.start_time).toLocaleString()
+    : "Unknown";
+
+  const messages = extractMessages(entry);
+
+  let contextMessages: ViewModelMessage[] = [];
+  let newMessages: ViewModelMessage[] = [];
+
+  if (index === 0) {
+    contextMessages = messages.filter(m => m.role === "system");
+    newMessages = messages.filter(m => m.role !== "system");
+  } else if (prevEntry) {
+    const prevMessages = extractMessages(prevEntry);
+    contextMessages = prevMessages;
+
+    // naive deep comparison — works for small arrays
+    newMessages = messages.filter(
+      (m, i) => !deepEqual(m, prevMessages[i])
+    );
+  }
+
+  return {
+    index,
+    startTime,
+    latencyMs: latency,
+    metadata: {
+      model: entry.response?.model || entry.request_body?.kwargs?.model || "unknown",
+      provider: entry.provider || "unknown",
+    },
+    contextMessages,
+    newMessages,
+  };
+}
+
+function deepEqual(a: any, b: any): boolean {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
 
 function computeLatency(entry: any): number | "Unknown" {
   try {
@@ -143,46 +122,4 @@ function extractMessages(entry: any): ViewModelMessage[] {
       arguments: tc.function?.arguments,
     })),
   }));
-}
-
-function renderMessage(m: ViewModelMessage): string {
-  const roleColor: Record<Role, string> = {
-    system: "#888",
-    user: "#0b5394",
-    assistant: "#38761d",
-    tool: "#990000",
-  };
-
-  let content = m.content ? `<pre>${escapeHtml(m.content)}</pre>` : "";
-  if (m.tool_calls?.length) {
-    content += m.tool_calls
-      .map(
-        (tc) => `
-        <div style="border: 1px solid #ccc; padding: 4px; margin-top: 4px;">
-          <strong>Tool Call: ${tc.functionName}</strong>
-          <pre>${escapeHtml(JSON.stringify(tc.arguments, null, 2))}</pre>
-        </div>`
-      )
-      .join("");
-  }
-
-  return `
-    <div style="margin-bottom: 1em;">
-      <strong style="color: ${roleColor[m.role]}">${m.role}:</strong>
-      ${content || "<em>(empty)</em>"}
-    </div>
-  `;
-}
-
-function escapeHtml(str: string): string {
-  return str.replace(/[&<>'"]/g, (tag) => {
-    const chars: Record<string, string> = {
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      "'": "&#39;",
-      '"': "&quot;",
-    };
-    return chars[tag] || tag;
-  });
 }

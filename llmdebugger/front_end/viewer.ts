@@ -32,8 +32,11 @@ function escapeHtml(str: string): string {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  const container = document.getElementById("session-content");
-  if (!container) return;
+  const container = document.getElementById("entry-container")!;
+  const prevBtn = document.getElementById("prev-btn") as HTMLButtonElement;
+  const nextBtn = document.getElementById("next-btn") as HTMLButtonElement;
+
+  if (!container || !prevBtn || !nextBtn) return;
 
   const sessionId = new URLSearchParams(window.location.search).get("id") || "demo";
 
@@ -51,12 +54,79 @@ document.addEventListener("DOMContentLoaded", async () => {
       return parseLogEntry(entry, i, prev);
     });
 
-    container.innerHTML = `<pre>${escapeHtml(JSON.stringify(parsed, null, 2))}</pre>`;
+    let currentIndex = 0;
+
+    function renderCurrentEntry() {
+      const entry = parsed[currentIndex];
+      container.innerHTML = `
+        <div>
+          <div><strong>Time:</strong> ${entry.startTime}</div>
+          <div><strong>New Messages:</strong></div>
+          <ul>
+            ${entry.newMessages
+              .map((m) =>
+                `<li data-role="${m.role}">
+                  <div class="role-label">${capitalize(m.role)}</div>
+                  <div class="message-body">
+                    ${
+                      m.tool_calls?.length
+                        ? m.tool_calls.map(tc => `
+                            <div class="tool-call">
+                              <strong>Tool:</strong> ${escapeHtml(tc.functionName)}
+                              <pre>${escapeHtml(typeof tc.arguments === "string" ? tc.arguments : JSON.stringify(tc.arguments, null, 2))}</pre>
+                            </div>
+                          `).join("")
+                        : m.role === "tool" && m.content
+                          ? `<div class="tool-response">
+                              <div class="tool-call-label">Tool Response:</div>
+                              <pre class="tool-response-body">${escapeHtml(prettyPrintJson(m.content))}</pre>
+                            </div>`
+                          : escapeHtml(m.content || "[no content]")
+                    }
+                  </div>
+                </li>`
+              ).join("")}
+          </ul>
+        </div>
+      `;
+
+      prevBtn.disabled = currentIndex === 0;
+      nextBtn.disabled = currentIndex === parsed.length - 1;
+    }
+
+    prevBtn.addEventListener("click", () => {
+      if (currentIndex > 0) {
+        currentIndex--;
+        renderCurrentEntry();
+      }
+    });
+
+    nextBtn.addEventListener("click", () => {
+      if (currentIndex < parsed.length - 1) {
+        currentIndex++;
+        renderCurrentEntry();
+      }
+    });
+
+    renderCurrentEntry();
   } catch (err) {
     console.error("Error loading session:", err);
     container.textContent = "⚠️ Failed to load session data.";
   }
 });
+
+function prettyPrintJson(str: string): string {
+  try {
+    return JSON.stringify(JSON.parse(str), null, 2);
+  } catch {
+    return str;
+  }
+}
+
+function capitalize(str: string): string {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
 
 function parseLogEntry(entry: any, index: number, prevEntry?: any): ViewModelEntry {
   const latency = entry.latency_ms ?? computeLatency(entry);

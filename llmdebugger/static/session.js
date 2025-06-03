@@ -1,3 +1,46 @@
+function buildViewModel(entry, prevEntry, index) {
+  const formatDate = str => new Date(str).toLocaleString();
+
+  const assistantReply = entry.response?.choices?.[0]?.message ?? null;
+  const currMsgs = [
+    ...(entry.request_body?.kwargs?.messages ?? []),
+    ...(assistantReply ? [assistantReply] : [])
+  ];
+
+  const prevReply = prevEntry?.response?.choices?.[0]?.message ?? null;
+  const prevMsgs = [
+    ...(prevEntry?.request_body?.kwargs?.messages ?? []),
+    ...(prevReply ? [prevReply] : [])
+  ];
+
+  const getMessageKey = m =>
+    `${m.role}:${m.name || ""}:${m.tool_call_id || ""}:${m.content || JSON.stringify(m.tool_calls)}`;
+  const prevKeys = new Set(prevMsgs.map(getMessageKey));
+
+  const newMessages = currMsgs
+    .filter(m => !prevKeys.has(getMessageKey(m)))
+    .map(normalizeMessage);
+
+  const lastUserIndex = currMsgs.map(m => m.role).lastIndexOf("user");
+  const contextMessages = currMsgs
+    .slice(0, lastUserIndex)
+    .filter(m => !newMessages.includes(m))
+    .map(normalizeMessage);
+
+  return {
+    index,
+    startTime: entry.start_time ? formatDate(entry.start_time) : "Unknown",
+    latencyMs: entry.latency_ms ?? computeLatency(entry),
+    metadata: {
+      model: entry.request_body?.kwargs?.model ?? "unknown",
+      provider: entry.provider ?? "unknown"
+    },
+    contextMessages,
+    newMessages
+  };
+}
+
+
 function computeLatency(entry) {
   try {
     const start = new Date(entry.start_time);
@@ -6,6 +49,18 @@ function computeLatency(entry) {
   } catch {
     return "Unknown";
   }
+}
+
+function escape(str) {
+  return (str || "").replace(/[&<>"']/g, function (m) {
+    return {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    }[m];
+  });
 }
 
 function renderEntry(index) {
@@ -131,18 +186,6 @@ async function fetchSession(sessionId) {
     console.error("Failed to load session:", err);
     document.getElementById("session-content").textContent = "⚠️ Failed to load session data.";
   }
-}
-
-function escape(str) {
-  return (str || "").replace(/[&<>"']/g, function (m) {
-    return {
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;"
-    }[m];
-  });
 }
 
 document.addEventListener("DOMContentLoaded", () => {

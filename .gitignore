@@ -25,3 +25,4 @@ htmlcov/
 
 # VS Code settings (optional)
 .vscode/
+/llmdebugger/front_end/node_modules

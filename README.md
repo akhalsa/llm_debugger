@@ -17,6 +17,10 @@ Ideal for developers building agent workflows, chat interfaces, or prompt-based 
 - ⏱️ Latency tracking and timestamping
 - 💾 JSON-based local session storage
 - 📁 Simple static frontend (no build tools)
+## build locally
+# first in llm_debugger/llmdebugger/front_end
+npx tsc
+npm install typescript
 
 ## install 
 pip install llm_debugger

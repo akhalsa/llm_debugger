@@ -13,7 +13,7 @@ def find_project_root(start_dir=None):
 
 
 PROJECT_ROOT = find_project_root()
-LOG_DIR = PROJECT_ROOT / ".llmdebugger" / "logs"
+LOG_DIR = PROJECT_ROOT / ".llm_logger" / "logs"
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 app = FastAPI()

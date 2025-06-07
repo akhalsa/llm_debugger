@@ -1,7 +1,7 @@
-# llmdebugger/wrappers/openai_wrapper.py
+# llm_logger/wrappers/openai_wrapper.py
 
 from datetime import datetime
-from llmdebugger.logger import log_call
+from llm_logger.logger import log_call
 
 def wrap_openai(client, logging_account_id: str):
     original_create = client.chat.completions.create

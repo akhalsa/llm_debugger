@@ -1,1 +1,1 @@
-recursive-include llmdebugger/static *
+recursive-include llm_logger/static *

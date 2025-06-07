@@ -86,7 +86,7 @@ If you want to modify the logger or UI code:
 
 3. **Frontend Development (only if modifying the UI):**
    ```bash
-   cd llmdebugger/front_end
+   cd llm_logger/front_end
    npm install
    npx tsc  # Compiles TypeScript to ../static
    ```
@@ -101,7 +101,7 @@ If you want to modify the logger or UI code:
 from dotenv import load_dotenv
 import openai
 import os
-from llmdebugger import wrap_openai
+from llm_logger import wrap_openai
 
 load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
@@ -124,7 +124,7 @@ response = openai_client.chat.completions.create(
 )
 ```
 
-This writes logs to `.llmdebugger/logs/`.
+This writes logs to `.llm_logger/logs/`.
 
 ---
 
@@ -136,10 +136,10 @@ Run the debugger UI as a standalone service:
 
 ```bash
 # Default port (8000)
-llmdebugger
+llm_logger
 
 # Or specify a custom port
-llmdebugger -p 8000
+llm_logger -p 8000
 ```
 
 Then open in your browser:
@@ -155,7 +155,7 @@ You can run the debugger UI alongside your application in the same process or in
 ```python
 from fastapi import FastAPI
 import uvicorn
-from llmdebugger.server import app as debugger_app
+from llm_logger.server import app as debugger_app
 
 # Your main application
 app = FastAPI()
@@ -174,7 +174,7 @@ if __name__ == "__main__":
 uvicorn your_app:app --host 0.0.0.0 --port 5000 &
 
 # Start the debugger UI on a different port
-llmdebugger -p 8000 &
+llm_logger -p 8000 &
 
 # Wait for both processes
 wait
@@ -200,7 +200,7 @@ COPY . .
 EXPOSE 5000 8000
 
 # Start both services
-CMD ["bash", "-c", "uvicorn your_app:app --host 0.0.0.0 --port 5000 & llmdebugger -p 8000 & wait"]
+CMD ["bash", "-c", "uvicorn your_app:app --host 0.0.0.0 --port 5000 & llm_logger -p 8000 & wait"]
 ```
 
 ---

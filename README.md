@@ -43,7 +43,7 @@ No frontend setup or Node.js required.
 
 ### 🔸 Local Install (for users customizing the logger or UI)
 
-#### 🧰 Prerequisites (for customization or UI development)
+#### 🧰 Prerequisites To Install Locally
 
 To customize the logger or UI (e.g. modify the interface or fork the code), make sure you have:
 

@@ -29,7 +29,9 @@ Ideal for developers building agent workflows, chat interfaces, or prompt-based 
 
 ## 📦 Installation
 
-### 🔹 From PyPI (for most users)
+### 🔹 Installation Options
+
+#### Option 1: From PyPI (Recommended for most users)
 
 Install the prebuilt package if you just want to use the tool:
 
@@ -37,73 +39,57 @@ Install the prebuilt package if you just want to use the tool:
 pip install llm_debugger
 ```
 
-No frontend setup or Node.js required.
+#### Option 2: From GitHub (Latest version)
+
+Install directly from GitHub:
+
+```bash
+pip install git+https://github.com/akhalsa/llm_debugger.git
+```
+
+#### Option 3: Local Copy (For direct integration or customization)
+
+Clone the repository and install:
+
+```bash
+# Clone the repo
+git clone https://github.com/akhalsa/llm_debugger.git
+
+# Install from the local copy
+pip install ./llm_debugger
+```
+
+**Note:** All installation methods include pre-compiled frontend files. No Node.js or frontend build steps are required for basic usage. The static files (HTML, CSS, JS) are packaged with the library, so the debugger UI works out of the box.
 
 ---
 
-### 🔸 Local Install (for users customizing the logger or UI)
+### 🔸 Development Setup (Only for contributors)
 
-#### 🧰 Prerequisites To Install Locally
+If you want to modify the logger or UI code:
 
-To customize the logger or UI (e.g. modify the interface or fork the code), make sure you have:
+1. **Prerequisites:**
+   - Python ≥ 3.8
+   - Node.js & npm (only needed for UI development)
 
-- **Python ≥ 3.8** — [Install Python](https://www.python.org/downloads/)
-- **Node.js & npm** — [Install Node.js](https://nodejs.org/)
-  - Includes `npx`, used to build the frontend
-- **pip** and (optionally) `venv` — usually bundled with Python
+2. **Setup:**
+   ```bash
+   git clone https://github.com/akhalsa/llm_debugger.git
+   cd llm_debugger
+   
+   # Optional: Create a virtual environment
+   python3 -m venv venv
+   source venv/bin/activate
+   
+   # Install in development mode
+   pip install -e .
+   ```
 
-You can verify your setup with:
-
-```bash
-python3 --version
-pip --version
-node --version
-npm --version
-npx --version
-```
-
----
-#### Installation
-
-There are two common ways to install locally:
-
-#### Option 1: Embedded in your project (for teams customizing UX or forking code)
-
-If you're building a product or workflow and want to bundle or fork the debugger:
-
-```bash
-# Clone the repo into your project folder
-git clone https://github.com/akhalsa/llm_debugger.git
-pip install -e ./llm_debugger
-
-# Optional: build the frontend if making UI changes
-cd llm_debugger/llmdebugger/front_end
-npm install
-npx tsc  # Outputs to ../static
-```
-
-This ensures the debugger runs in the same environment as your LLM app, with optional UI customization.
-
-#### Option 2: As a standalone tool (recommended for contributors)
-
-If you're contributing to the debugger or developing its features/UI independently:
-
-```bash
-git clone https://github.com/akhalsa/llm_debugger.git
-cd llm_debugger
-
-# (Recommended) Create and activate a virtual environment
-python3 -m venv llm_debugger_env
-source llm_debugger_env/bin/activate
-
-# Install in editable mode
-pip install -e .
-
-# Build the frontend
-cd llmdebugger/front_end
-npm install
-npx tsc  # Outputs to ../static via tsconfig.json
-```
+3. **Frontend Development (only if modifying the UI):**
+   ```bash
+   cd llmdebugger/front_end
+   npm install
+   npx tsc  # Compiles TypeScript to ../static
+   ```
 
 ---
 
@@ -144,17 +130,77 @@ This writes logs to `.llmdebugger/logs/`.
 
 ### 2. Launch the Log Viewer
 
-Make sure you're in the same environment where `llmdebugger` was installed.
-If you get `llmdebugger: command not found`, you may need to run `pip install` from your active venv.
+#### Option A: Standalone Mode
+
+Run the debugger UI as a standalone service:
 
 ```bash
+# Default port (8000)
+llmdebugger
+
+# Or specify a custom port
 llmdebugger -p 8000
 ```
 
 Then open in your browser:
-
 ```
 http://localhost:8000/static/index.html
+```
+
+#### Option B: Alongside Your Application
+
+You can run the debugger UI alongside your application in the same process or in a separate process:
+
+**Same Process (using FastAPI):**
+```python
+from fastapi import FastAPI
+import uvicorn
+from llmdebugger.server import app as debugger_app
+
+# Your main application
+app = FastAPI()
+
+# Mount the debugger UI at /debugger
+app.mount("/debugger", debugger_app)
+
+# Run your application
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=5000)
+```
+
+**Separate Process (e.g., in Docker):**
+```bash
+# Start your main application
+uvicorn your_app:app --host 0.0.0.0 --port 5000 &
+
+# Start the debugger UI on a different port
+llmdebugger -p 8000 &
+
+# Wait for both processes
+wait
+```
+
+#### Option C: Docker Environment
+
+If you're using Docker, you can include the debugger UI in your Dockerfile without requiring Node.js:
+
+```dockerfile
+FROM python:3.9-slim
+
+WORKDIR /app
+
+# Install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy your application code
+COPY . .
+
+# Expose ports for both your app and the debugger
+EXPOSE 5000 8000
+
+# Start both services
+CMD ["bash", "-c", "uvicorn your_app:app --host 0.0.0.0 --port 5000 & llmdebugger -p 8000 & wait"]
 ```
 
 ---

@@ -21,3 +21,6 @@ Homepage = "https://github.com/akhalsa/llmdebugger"
 
 [project.scripts]
 llmdebugger = "llmdebugger.cli:main"
+
+[tool.setuptools]
+include-package-data = true

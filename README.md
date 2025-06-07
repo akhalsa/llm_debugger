@@ -42,12 +42,13 @@ This includes a prebuilt UI — no TypeScript, Node.js, or frontend setup requir
 Use this if you want to contribute to the codebase or modify the UI.
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/llm_debugger.git
+# clone the repo
+git clone https://github.com/akhalsa/llm_debugger.git
 cd llm_debugger
 # (Recommended) Create and activate a virtual environment
 python3 -m venv llm_logger_env
 source llm_logger_env/bin/activate
-
+# install package
 pip install -e .
 ```
 

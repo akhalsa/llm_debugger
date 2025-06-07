@@ -14,15 +14,17 @@ Ideal for developers building agent workflows, chat interfaces, or prompt-based 
 
 ## ✨ Features
 
-- Automated session tagging and diffs between chat contexts
-- 🔧 Tool call and tool response visualizations
-- ⏱️ Latency tracking and timestamping
-- 💾 JSON-based local session storage
-- 🧩 Framework-agnostic and privacy-preserving
-- 📁 Simple static frontend served locally (no build tools required for end users)
+- ⚡ **One-line setup** – Start logging with a simple wrapper around your OpenAI client  
+- 🧠 **Automatic session tracking** – No manual session IDs or state management required  
+- 💾 **Local-first logging** – Stores structured logs as JSON on your machine  
+- 🔍 **Rich session insights** – Context diffs, tool call/response blocks, and system prompt visibility  
+- ⏱️ **Latency + metadata capture** – Track timing, models, and more with every call  
+- 🧩 **Framework-agnostic** – Works with any Python codebase  
+- 🛡️ **Privacy-first** – Fully offline, no account or server required  
+- 🌐 **Simple UI** – Static frontend served locally; no build step needed for end users  
+- 👐 **Open source (MIT)** – Lightweight, auditable, and easy to extend  
 
 ---
-
 ## 📦 Installation
 
 ### 🔹 Install from PyPI (for users)
@@ -37,6 +39,27 @@ This includes a prebuilt UI — no TypeScript, Node.js, or frontend setup requir
 
 ---
 
+### 🧰 Prerequisites (for local development)
+
+If you want to contribute or modify the UI, make sure you have:
+
+- **Python ≥ 3.8** — [Install Python](https://www.python.org/downloads/)
+- **Node.js & npm** — [Install Node.js](https://nodejs.org/)
+  - Includes `npx`, used to build the frontend
+- **pip** and (optionally) `venv` — usually bundled with Python
+
+Check with:
+
+```bash
+python3 --version
+pip --version
+node --version
+npm --version
+npx --version
+```
+
+---
+
 ### 🔸 Install Locally (for contributors)
 
 Use this if you want to contribute to the codebase or modify the UI.
@@ -45,9 +68,11 @@ Use this if you want to contribute to the codebase or modify the UI.
 # clone the repo
 git clone https://github.com/akhalsa/llm_debugger.git
 cd llm_debugger
+
 # (Recommended) Create and activate a virtual environment
 python3 -m venv llm_logger_env
 source llm_logger_env/bin/activate
+
 # install package
 pip install -e .
 ```
@@ -63,7 +88,6 @@ npx tsc  # Outputs directly to ../static via tsconfig.json
 That's it — no copying needed. The FastAPI server will serve from `static/`.
 
 ---
-
 
 ## 🚀 Usage
 
@@ -132,7 +156,7 @@ You'll see:
 
 ## 📬 Feedback
 
-Found a bug? Have a feature request? Open an [issue](https://github.com/YOUR_USERNAME/llm_debugger/issues) or drop me a note.
+Found a bug? Have a feature request? Open an [issue](https://github.com/akhalsa/llm_debugger/issues) or drop me a note.
 
 ---
 

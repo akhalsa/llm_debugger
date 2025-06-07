@@ -2,7 +2,6 @@
 
 from datetime import datetime
 from llmdebugger.logger import log_call
-from llmdebugger.session import compute_session_id
 
 def wrap_openai(client, logging_account_id: str):
     original_create = client.chat.completions.create

@@ -3,7 +3,6 @@ import json
 from datetime import datetime
 from pathlib import Path
 import hashlib
-from llmdebugger.session import compute_session_id
 
     
 def find_project_root(start_dir=None):
@@ -40,6 +39,7 @@ def hash_messages(messages):
     string = json.dumps(normalized, sort_keys=True, ensure_ascii=False)
     return hashlib.sha256(string.encode("utf-8")).hexdigest()[:12]
 
+    
 def session_file_exists(messages):
     session_id = hash_messages(messages)
     return (LOG_DIR / f"{session_id}.json").exists()

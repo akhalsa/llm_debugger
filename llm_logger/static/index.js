@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", async () => {
   // Use the BASE_URL if it's defined, otherwise default to empty string
   const baseUrl = window.BASE_URL || '';
-  
+  console.log("BASE_URL:", baseUrl);
   const res = await fetch(`${baseUrl}/api/sessions`);
   const sessions = await res.json();
   const list = document.getElementById("session-list");

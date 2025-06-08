@@ -35,7 +35,12 @@ def create_app(base_url=""):
             content = f.read()
         
         # Inject the base_url as a JavaScript variable
-        script_tag = f'<script>window.BASE_URL = "{app.state.base_url}";</script>'
+        script_tag = f'''
+            <script>
+            window.BASE_URL = "{app.state.base_url}";
+            document.write(`<script defer src="${{window.BASE_URL}}/static/index.js"><\\/script>`);
+            </script>
+            '''
         modified_content = content.replace('</head>', f'{script_tag}</head>')
         
         return HTMLResponse(content=modified_content)

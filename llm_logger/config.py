@@ -2,12 +2,12 @@ import os
 import json
 
 DEFAULT_CONFIG = {
-    "log_dir": ".llmdebugger/logs",
+    "log_dir": ".llm_logger/logs",
     "cloud": False,
     "logging_account_id": None
 }
 
-CONFIG_PATH = os.path.expanduser("~/.llmdebugger/config.json")
+CONFIG_PATH = os.path.expanduser("~/.llm_logger/config.json")
 
 def load_config():
     if not os.path.exists(CONFIG_PATH):

@@ -13,15 +13,20 @@ function escapeHtml(str) {
         "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
     })[m] || m);
 }
+function apiUrl(path) {
+    const base = window.BASE_URL || "";
+    return `${base}${path}`;
+}
 document.addEventListener("DOMContentLoaded", () => __awaiter(void 0, void 0, void 0, function* () {
     const container = document.getElementById("entry-container");
     const prevBtn = document.getElementById("prev-btn");
     const nextBtn = document.getElementById("next-btn");
     if (!container || !prevBtn || !nextBtn)
         return;
-    const sessionId = new URLSearchParams(window.location.search).get("id") || "demo";
+    const match = window.location.pathname.match(/\/sessions\/([^\/?#]+)/);
+    const sessionId = (match === null || match === void 0 ? void 0 : match[1]) || "demo";
     try {
-        const res = yield fetch(`/api/sessions/${sessionId}`);
+        const res = yield fetch(apiUrl(`/api/sessions/${sessionId}`));
         const logEntries = yield res.json();
         if (!Array.isArray(logEntries)) {
             container.textContent = "⚠️ Invalid session format.";

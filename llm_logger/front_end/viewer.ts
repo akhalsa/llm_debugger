@@ -31,6 +31,10 @@ function escapeHtml(str: string): string {
   })[m] || m);
 }
 
+function apiUrl(path: string): string {
+  const base = (window as any).BASE_URL || "";
+  return `${base}${path}`;
+}
 
 document.addEventListener("DOMContentLoaded", async () => {
   const container = document.getElementById("entry-container")!;
@@ -39,10 +43,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   if (!container || !prevBtn || !nextBtn) return;
 
-  const sessionId = new URLSearchParams(window.location.search).get("id") || "demo";
-
+  const match = window.location.pathname.match(/\/sessions\/([^\/?#]+)/);
+  const sessionId = match?.[1] || "demo";
   try {
-    const res = await fetch(`/api/sessions/${sessionId}`);
+    const res = await fetch(apiUrl(`/api/sessions/${sessionId}`));
     const logEntries = await res.json();
 
     if (!Array.isArray(logEntries)) {

@@ -13,6 +13,10 @@ function escapeHtml(str) {
         "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
     })[m] || m);
 }
+function apiUrl(path) {
+    const base = window.BASE_URL || "";
+    return `${base}${path}`;
+}
 document.addEventListener("DOMContentLoaded", () => __awaiter(void 0, void 0, void 0, function* () {
     const container = document.getElementById("entry-container");
     const prevBtn = document.getElementById("prev-btn");
@@ -21,9 +25,7 @@ document.addEventListener("DOMContentLoaded", () => __awaiter(void 0, void 0, vo
         return;
     const sessionId = new URLSearchParams(window.location.search).get("id") || "demo";
     try {
-        // Use the BASE_URL if it's defined, otherwise default to empty string
-        const baseUrl = window.BASE_URL || '';
-        const res = yield fetch(`${baseUrl}/api/sessions/${sessionId}`);
+        const res = yield fetch(apiUrl(`/api/sessions/${sessionId}`));
         const logEntries = yield res.json();
         if (!Array.isArray(logEntries)) {
             container.textContent = "⚠️ Invalid session format.";

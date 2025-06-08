@@ -15,7 +15,7 @@ def main():
     display_host = "localhost" if host == "0.0.0.0" else host
     print(f"Starting LLM Debugger UI on http://{display_host}:{port}/static/index.html")
     
-    uvicorn.run("llm_logger.server:app", host=host, port=port)
+    uvicorn.run("llm_logger.log_viewer:app", host=host, port=port)
 
 if __name__ == "__main__":
     main()

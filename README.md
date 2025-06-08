@@ -87,7 +87,7 @@ If you want to modify the logger or UI code:
    ```bash
    cd llm_logger/front_end
    npm install
-   npx tsc  # Compiles TypeScript to ../static
+   npx tsc
    ```
 
 ---
@@ -153,7 +153,7 @@ You can run the debugger UI alongside your application if you're using a python 
 ```python
 from fastapi import FastAPI
 import uvicorn
-from llm_logger.server import create_app as create_log_viewer_app
+from llm_logger.log_viewer import create_log_viewer_app
 log_viewer_app = create_log_viewer_app(base_url="/debugger")
 
 # Your main application

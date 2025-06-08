@@ -1,4 +1,4 @@
-# LLM Debugger
+# Log and View Python Based LLM Conversations
 
 **LLM Logger** is a lightweight, local-first tool for inspecting and understanding how your application interacts with large language models like OpenAI GPT-4 or Anthropic Claude.
 
@@ -153,16 +153,14 @@ You can run the debugger UI alongside your application if you're using a python 
 ```python
 from fastapi import FastAPI
 import uvicorn
-from llm_logger.server import app as debugger_app
-# Or with a custom base URL:
-# from llm_logger.server import create_app
-# debugger_app = create_app(base_url="/debugger")
+from llm_logger.server import create_app as create_log_viewer_app
+log_viewer_app = create_log_viewer_app(base_url="/debugger")
 
 # Your main application
 app = FastAPI()
 
 # Mount the debugger UI at /debugger
-app.mount("/debugger", debugger_app)
+app.mount("/debugger", log_viewer_app)
 
 # Run your application
 if __name__ == "__main__":

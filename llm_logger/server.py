@@ -23,12 +23,12 @@ STATIC_DIR = BASE_DIR / "static"
 def create_app(base_url=""):
     """Create the FastAPI app with an optional base_url parameter."""
     app = FastAPI()
-    app.mount("/static", StaticFiles(directory=STATIC_DIR, html=True), name="static")
-    
+    app.mount(f"{base_url}/static", StaticFiles(directory=STATIC_DIR, html=True), name="static")
+
     # Store the base_url in the app state
     app.state.base_url = base_url
 
-    @app.get("/")
+    @app.get(f"/")
     def index(request: Request):
         # Instead of returning the file directly, we'll inject the base_url
         with open(STATIC_DIR / "index.html", "r") as f:
@@ -40,7 +40,7 @@ def create_app(base_url=""):
         
         return HTMLResponse(content=modified_content)
 
-    @app.get("/sessions/{session_id}", response_class=HTMLResponse)
+    @app.get(f"/sessions/{{session_id}}", response_class=HTMLResponse)
     def serve_session_view(request: Request, session_id: str):
         # Inject the base_url into session.html too
         with open(STATIC_DIR / "session.html", "r") as f:
@@ -51,12 +51,12 @@ def create_app(base_url=""):
         
         return HTMLResponse(content=modified_content)
 
-    @app.get("/api/sessions")
+    @app.get(f"/api/sessions")
     def list_sessions():
         files = sorted(LOG_DIR.glob("*.json"))
         return [f.name for f in files]
 
-    @app.get("/api/sessions/{session_id}")
+    @app.get(f"/api/sessions/{{session_id}}")
     def get_session(session_id: str):
         path = LOG_DIR / f"{session_id}.json"
         if not path.exists():

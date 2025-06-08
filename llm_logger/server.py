@@ -23,7 +23,7 @@ STATIC_DIR = BASE_DIR / "static"
 def create_app(base_url=""):
     """Create the FastAPI app with an optional base_url parameter."""
     app = FastAPI()
-    app.mount(f"{base_url}/static", StaticFiles(directory=STATIC_DIR, html=True), name="static")
+    app.mount("/static", StaticFiles(directory=STATIC_DIR, html=True), name="static")
 
     # Store the base_url in the app state
     app.state.base_url = base_url

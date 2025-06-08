@@ -74,11 +74,11 @@ If you want to modify the logger or UI code:
    ```bash
    git clone https://github.com/akhalsa/llm_debugger.git
    cd llm_debugger
-   
+
    # Optional: Create a virtual environment
    python3 -m venv venv
    source venv/bin/activate
-   
+
    # Install in development mode
    pip install -e .
    ```
@@ -167,25 +167,25 @@ if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=5000)
 ```
 
-**In A Docker As A Parallel Process:**
-In production or distributed development environments, it is recommended to run the llm_logger UI as a stand alone process. 
-Here is an example start.sh file
-```bash
-# Start your main application. It does not have to be a unicorn app. This is just an example
-uvicorn your_app:app --host 0.0.0.0 --port 5000 &
+#### Option C: Docker — Run Your App + the Log Viewer in One Container
 
-# Start the debugger UI on a different port
-uvicorn llm_logger.log_viewer:app --host 0.0.0.0 --port 8000
+You can run both your own app and the log viewer in one container, using any process manager or framework you prefer. (Be sure to expose two ports) 
 
-# Wait for both processes
-wait
+For example:
+
+```dockerfile
+EXPOSE 5000
+EXPOSE 8000
+
+CMD bash -c "\
+  uvicorn your_app_module:app --host 0.0.0.0 --port 5000 & \
+  uvicorn llm_logger.log_viewer:app --host 0.0.0.0 --port 8000 && wait"
 ```
-To run this, your docker file should end with something like:
-CMD ["/app/start.sh"]
-Make sure to copy the start.sh file into the image and set permissions 
-something like:
-COPY code/server/start.sh /app/start.sh
-RUN chmod +x /app/start.sh
+
+> 🔁 **Not using `uvicorn`?**  
+> Replace `uvicorn your_app_module:app --host 0.0.0.0 --port 5000` with whatever launches your app — it could be Flask, Gunicorn, a background service, or anything else.
+
+
 
 ---
 

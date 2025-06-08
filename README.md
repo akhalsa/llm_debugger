@@ -167,61 +167,25 @@ if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=5000)
 ```
 
-**With Custom Base URL:**
-
-If you need to specify a custom base URL (for example, when the debugger is mounted at a specific path or accessed through a reverse proxy), you can use the `create_app` function:
-
-```python
-from fastapi import FastAPI
-from llm_logger.server import create_app
-
-# Your main application
-app = FastAPI()
-
-# Create debugger app with custom base URL
-debugger_app = create_app(base_url="/debugger")  # or any other path where it's mounted
-
-# Mount the debugger UI
-app.mount("/debugger", debugger_app)
-```
-
-This ensures that all internal links and API calls in the debugger UI will use the correct base URL.
-
-**Parallel Process (e.g., in Docker):**
+**In A Docker As A Parallel Process:**
 In production or distributed development environments, it is recommended to run the llm_logger UI as a stand alone process. 
+Here is an example start.sh file
 ```bash
-# Start your main application
+# Start your main application. It does not have to be a unicorn app. This is just an example
 uvicorn your_app:app --host 0.0.0.0 --port 5000 &
 
 # Start the debugger UI on a different port
-llm_logger -p 8000 &
+uvicorn llm_logger.log_viewer:app --host 0.0.0.0 --port 8000
 
 # Wait for both processes
 wait
 ```
-
-#### Option C: Docker Environment
-
-If you're using Docker, you can include the debugger UI in your Dockerfile without requiring Node.js:
-
-```dockerfile
-FROM python:3.9-slim
-
-WORKDIR /app
-
-# Install dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy your application code
-COPY . .
-
-# Expose ports for both your app and the debugger
-EXPOSE 5000 8000
-
-# Start both services
-CMD ["bash", "-c", "uvicorn your_app:app --host 0.0.0.0 --port 5000 & llm_logger -p 8000 & wait"]
-```
+To run this, your docker file should end with something like:
+CMD ["/app/start.sh"]
+Make sure to copy the start.sh file into the image and set permissions 
+something like:
+COPY code/server/start.sh /app/start.sh
+RUN chmod +x /app/start.sh
 
 ---
 

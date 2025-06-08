@@ -23,7 +23,8 @@ document.addEventListener("DOMContentLoaded", () => __awaiter(void 0, void 0, vo
     const nextBtn = document.getElementById("next-btn");
     if (!container || !prevBtn || !nextBtn)
         return;
-    const sessionId = new URLSearchParams(window.location.search).get("id") || "demo";
+    const match = window.location.pathname.match(/\/sessions\/([^\/?#]+)/);
+    const sessionId = (match === null || match === void 0 ? void 0 : match[1]) || "demo";
     try {
         const res = yield fetch(apiUrl(`/api/sessions/${sessionId}`));
         const logEntries = yield res.json();

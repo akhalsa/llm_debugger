@@ -43,8 +43,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   if (!container || !prevBtn || !nextBtn) return;
 
-  const sessionId = new URLSearchParams(window.location.search).get("id") || "demo";
-
+  const match = window.location.pathname.match(/\/sessions\/([^\/?#]+)/);
+  const sessionId = match?.[1] || "demo";
   try {
     const res = await fetch(apiUrl(`/api/sessions/${sessionId}`));
     const logEntries = await res.json();

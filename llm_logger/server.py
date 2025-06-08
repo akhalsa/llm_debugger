@@ -25,7 +25,7 @@ def inject_base_url(content: str, base_url: str, script_path:str) -> str:
     script_tag = f'''
             <script>
             window.BASE_URL = "{app.state.base_url}";
-            document.write(`<script defer src="${{window.BASE_URL}}/static/{script_path}s"><\\/script>`);
+            document.write(`<script defer src="${{window.BASE_URL}}/static/{script_path}"><\\/script>`);
             </script>
             '''
     modified_content = content.replace('</head>', f'{script_tag}</head>')

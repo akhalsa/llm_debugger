@@ -149,7 +149,7 @@ http://localhost:8000
 
 You can run the debugger UI alongside your application if you're using a python webapp
 
-**Same Process (using FastAPI):**
+**Same Process (this example uses FastAPI but you can do something similar from any python webapp framework):**
 ```python
 from fastapi import FastAPI
 import uvicorn
@@ -171,7 +171,7 @@ if __name__ == "__main__":
 
 You can run both your own app and the log viewer in one container, using any process manager or framework you prefer. (Be sure to expose two ports) 
 
-For example:
+Example Dockerfile:
 
 ```dockerfile
 EXPOSE 5000

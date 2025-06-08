@@ -21,7 +21,9 @@ document.addEventListener("DOMContentLoaded", () => __awaiter(void 0, void 0, vo
         return;
     const sessionId = new URLSearchParams(window.location.search).get("id") || "demo";
     try {
-        const res = yield fetch(`/api/sessions/${sessionId}`);
+        // Use the BASE_URL if it's defined, otherwise default to empty string
+        const baseUrl = window.BASE_URL || '';
+        const res = yield fetch(`${baseUrl}/api/sessions/${sessionId}`);
         const logEntries = yield res.json();
         if (!Array.isArray(logEntries)) {
             container.textContent = "⚠️ Invalid session format.";

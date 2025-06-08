@@ -28,3 +28,4 @@ htmlcov/
 
 node_modules/
 *.tsbuildinfo
+dist/

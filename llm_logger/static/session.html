@@ -3,11 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <title>Session Viewer</title>
-  <script>
-    // This will be replaced by the injected BASE_URL from server.py
-    window.BASE_URL = window.BASE_URL || '';
-    document.write(`<link rel="stylesheet" href="${window.BASE_URL}/static/style.css" />`);
-  </script>
 </head>
 <body>
   <div id="entry-viewer">
@@ -17,9 +12,5 @@
       <button id="next-btn">Next ➡️</button>
     </div>
   </div>
-
-  <script>
-    document.write(`<script src="${window.BASE_URL}/static/viewer.js"><\/script>`);
-  </script>
 </body>
 </html>

@@ -20,6 +20,17 @@ LOG_DIR.mkdir(parents=True, exist_ok=True)
 BASE_DIR = Path(__file__).parent
 STATIC_DIR = BASE_DIR / "static"
 
+def inject_base_url(content: str, base_url: str, script_path:str) -> str:
+    """Inject the base_url into the content of the index.html file."""
+    script_tag = f'''
+            <script>
+            window.BASE_URL = "{app.state.base_url}";
+            document.write(`<script defer src="${{window.BASE_URL}}/static/{script_path}s"><\\/script>`);
+            </script>
+            '''
+    modified_content = content.replace('</head>', f'{script_tag}</head>')
+    return modified_content
+
 def create_app(base_url=""):
     """Create the FastAPI app with an optional base_url parameter."""
     app = FastAPI()
@@ -35,14 +46,7 @@ def create_app(base_url=""):
             content = f.read()
         
         # Inject the base_url as a JavaScript variable
-        script_tag = f'''
-            <script>
-            window.BASE_URL = "{app.state.base_url}";
-            document.write(`<script defer src="${{window.BASE_URL}}/static/index.js"><\\/script>`);
-            </script>
-            '''
-        modified_content = content.replace('</head>', f'{script_tag}</head>')
-        
+        modified_content = inject_base_url(content, app.state.base_url, script_path="index.js")
         return HTMLResponse(content=modified_content)
 
     @app.get(f"/sessions/{{session_id}}", response_class=HTMLResponse)
@@ -51,9 +55,7 @@ def create_app(base_url=""):
         with open(STATIC_DIR / "session.html", "r") as f:
             content = f.read()
         
-        script_tag = f'<script>window.BASE_URL = "{app.state.base_url}";</script>'
-        modified_content = content.replace('</head>', f'{script_tag}</head>')
-        
+        modified_content = inject_base_url(content, app.state.base_url, script_path="viewer.js")
         return HTMLResponse(content=modified_content)
 
     @app.get(f"/api/sessions")

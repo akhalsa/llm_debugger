@@ -8,6 +8,7 @@ def wrap_openai(client, logging_account_id: str):
 
     def wrapped_create(*args, **kwargs):
         request_start_timestamp = datetime.now().astimezone().isoformat()
+        session_id = kwargs.pop("session_id", None)
         response = original_create(*args, **kwargs)
         request_end_timestamp = datetime.now().astimezone().isoformat()
 
@@ -19,6 +20,7 @@ def wrap_openai(client, logging_account_id: str):
             request_start_timestamp=request_start_timestamp,
             request_end_timestamp=request_end_timestamp,
             logging_account_id=logging_account_id,
+            session_id=session_id
         )
 
         return response

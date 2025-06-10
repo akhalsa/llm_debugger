@@ -86,6 +86,26 @@ header h1 {
   font-size: 1rem;
 }
 
+.date-picker-container {
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.date-picker-container label {
+  font-weight: 500;
+  color: #555;
+}
+
+.date-input {
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  color: #333;
+}
+
 .date-group {
   margin-bottom: 2rem;
 }

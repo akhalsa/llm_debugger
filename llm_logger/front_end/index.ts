@@ -104,19 +104,23 @@ function renderSessionsList(sessions: Session[]): void {
 
     sessionsForDate.forEach(session => {
       const baseUrl = (window as any).BASE_URL || '';
+      // Capitalize first letter of sender role
+      const senderRole = session.metadata?.provider || 'assistant';
+      const capitalizedSenderRole = capitalize(senderRole);
+      
       html += `
         <li class="session-item">
           <a href="${baseUrl}/sessions/${encodeURIComponent(session.id)}" class="session-link">
-            <div class="session-id">${escapeHtml(session.id.substring(0, 8))}...</div>
             <div class="session-content">
+              <div class="sender-name">${escapeHtml(capitalizedSenderRole)}</div>
               ${session.message ? 
-                `<div class="message-container">
-                  <div class="sender-name">${escapeHtml(session.metadata?.provider || 'Assistant')}:</div>
-                  <div class="message-text">${escapeHtml(session.message.substring(0, 100))}${session.message.length > 100 ? '...' : ''}</div>
-                </div>` : 
+                `<div class="message-text">${escapeHtml(session.message.substring(0, 100))}${session.message.length > 100 ? '...' : ''}</div>` : 
                 `<div class="empty-message">No message content</div>`
               }
-              <div class="session-time-small">${escapeHtml(session.displayTime)}</div>
+              <div class="session-footer">
+                <span class="session-id-small">${escapeHtml(session.id.substring(0, 8))}...</span>
+                <span class="session-time-small">${escapeHtml(session.displayTime)}</span>
+              </div>
             </div>
           </a>
         </li>

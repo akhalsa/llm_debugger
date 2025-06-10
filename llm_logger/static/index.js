@@ -7,7 +7,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { escapeHtml, apiUrl } from './common.js';
+import { escapeHtml, apiUrl, capitalize } from './common.js';
 // Function to format the timestamp for display
 function formatTimestamp(id) {
     if (/^\d{4}-\d{2}-\d{2}T\d{2}/.test(id)) {
@@ -82,18 +82,21 @@ function renderSessionsList(sessions) {
         sessionsForDate.forEach(session => {
             var _a;
             const baseUrl = window.BASE_URL || '';
+            // Capitalize first letter of sender role
+            const senderRole = ((_a = session.metadata) === null || _a === void 0 ? void 0 : _a.provider) || 'assistant';
+            const capitalizedSenderRole = capitalize(senderRole);
             html += `
         <li class="session-item">
           <a href="${baseUrl}/sessions/${encodeURIComponent(session.id)}" class="session-link">
-            <div class="session-id">${escapeHtml(session.id.substring(0, 8))}...</div>
             <div class="session-content">
+              <div class="sender-name">${escapeHtml(capitalizedSenderRole)}</div>
               ${session.message ?
-                `<div class="message-container">
-                  <div class="sender-name">${escapeHtml(((_a = session.metadata) === null || _a === void 0 ? void 0 : _a.provider) || 'Assistant')}:</div>
-                  <div class="message-text">${escapeHtml(session.message.substring(0, 100))}${session.message.length > 100 ? '...' : ''}</div>
-                </div>` :
+                `<div class="message-text">${escapeHtml(session.message.substring(0, 100))}${session.message.length > 100 ? '...' : ''}</div>` :
                 `<div class="empty-message">No message content</div>`}
-              <div class="session-time-small">${escapeHtml(session.displayTime)}</div>
+              <div class="session-footer">
+                <span class="session-id-small">${escapeHtml(session.id.substring(0, 8))}...</span>
+                <span class="session-time-small">${escapeHtml(session.displayTime)}</span>
+              </div>
             </div>
           </a>
         </li>

@@ -29,12 +29,13 @@ type ViewModelEntry = {
 
 document.addEventListener("DOMContentLoaded", async () => {
   const container = document.getElementById("entry-container")!;
+  const positionDisplay = document.getElementById("entry-position")!;
   const prevBtn = document.getElementById("prev-btn") as HTMLButtonElement;
   const nextBtn = document.getElementById("next-btn") as HTMLButtonElement;
   const backBtn = document.getElementById("back-btn") as HTMLButtonElement;
   const refreshBtn = document.getElementById("refresh-btn") as HTMLButtonElement;
 
-  if (!container || !prevBtn || !nextBtn || !backBtn || !refreshBtn) return;
+  if (!container || !prevBtn || !nextBtn || !backBtn || !refreshBtn || !positionDisplay) return;
 
   const match = window.location.pathname.match(/\/sessions\/([^\/?#]+)/);
   const sessionId = match?.[1] || "demo";
@@ -57,7 +58,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         return parseLogEntry(entry, i, prev);
       });
 
-      currentIndex = parsed.length - 1; // Start at the last message
+      currentIndex = parsed.length - 1;
       renderCurrentEntry();
     } catch (err) {
       console.error("Error loading session:", err);
@@ -67,6 +68,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   function renderCurrentEntry() {
     const entry = parsed[currentIndex];
+
     container.innerHTML = `
       <div>
         <div><strong>Time:</strong> ${entry.startTime}</div>
@@ -100,7 +102,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         <div><strong>New Messages:</strong></div>
         <ul>
-          ${entry.newMessages.map((m) => `
+          ${entry.newMessages.map(m => `
             <li data-role="${m.role}">
               <div class="role-label">${capitalize(m.role)}</div>
               <div class="message-body">
@@ -129,7 +131,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const toggleBtn = document.querySelector(".toggle-context") as HTMLButtonElement;
     toggleBtn?.addEventListener("click", () => {
       const list = document.querySelector(".context-list") as HTMLElement;
-      if (!list || !toggleBtn) return;
+      if (!list) return;
       const isOpen = list.style.display !== "none";
       list.style.display = isOpen ? "none" : "block";
       toggleBtn.textContent = isOpen ? "Show Context Messages" : "Hide Context Messages";
@@ -137,6 +139,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     prevBtn.disabled = currentIndex === 0;
     nextBtn.disabled = currentIndex === parsed.length - 1;
+
+    positionDisplay.textContent = `Entry ${currentIndex + 1} of ${parsed.length}`;
   }
 
   prevBtn.addEventListener("click", () => {
@@ -154,7 +158,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   backBtn.addEventListener("click", () => {
-    window.location.href = "/index.html";
+    window.location.href = "/";
   });
 
   refreshBtn.addEventListener("click", () => {

@@ -10,11 +10,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 import { escapeHtml, apiUrl, prettyPrintJson, capitalize } from './common.js';
 document.addEventListener("DOMContentLoaded", () => __awaiter(void 0, void 0, void 0, function* () {
     const container = document.getElementById("entry-container");
+    const positionDisplay = document.getElementById("entry-position");
     const prevBtn = document.getElementById("prev-btn");
     const nextBtn = document.getElementById("next-btn");
     const backBtn = document.getElementById("back-btn");
     const refreshBtn = document.getElementById("refresh-btn");
-    if (!container || !prevBtn || !nextBtn || !backBtn || !refreshBtn)
+    if (!container || !prevBtn || !nextBtn || !backBtn || !refreshBtn || !positionDisplay)
         return;
     const match = window.location.pathname.match(/\/sessions\/([^\/?#]+)/);
     const sessionId = (match === null || match === void 0 ? void 0 : match[1]) || "demo";
@@ -33,7 +34,7 @@ document.addEventListener("DOMContentLoaded", () => __awaiter(void 0, void 0, vo
                     const prev = i > 0 ? logEntries[i - 1] : undefined;
                     return parseLogEntry(entry, i, prev);
                 });
-                currentIndex = parsed.length - 1; // Start at the last message
+                currentIndex = parsed.length - 1;
                 renderCurrentEntry();
             }
             catch (err) {
@@ -78,7 +79,7 @@ document.addEventListener("DOMContentLoaded", () => __awaiter(void 0, void 0, vo
 
         <div><strong>New Messages:</strong></div>
         <ul>
-          ${entry.newMessages.map((m) => {
+          ${entry.newMessages.map(m => {
             var _a;
             return `
             <li data-role="${m.role}">
@@ -107,7 +108,7 @@ document.addEventListener("DOMContentLoaded", () => __awaiter(void 0, void 0, vo
         const toggleBtn = document.querySelector(".toggle-context");
         toggleBtn === null || toggleBtn === void 0 ? void 0 : toggleBtn.addEventListener("click", () => {
             const list = document.querySelector(".context-list");
-            if (!list || !toggleBtn)
+            if (!list)
                 return;
             const isOpen = list.style.display !== "none";
             list.style.display = isOpen ? "none" : "block";
@@ -115,6 +116,7 @@ document.addEventListener("DOMContentLoaded", () => __awaiter(void 0, void 0, vo
         });
         prevBtn.disabled = currentIndex === 0;
         nextBtn.disabled = currentIndex === parsed.length - 1;
+        positionDisplay.textContent = `Entry ${currentIndex + 1} of ${parsed.length}`;
     }
     prevBtn.addEventListener("click", () => {
         if (currentIndex > 0) {
@@ -129,7 +131,7 @@ document.addEventListener("DOMContentLoaded", () => __awaiter(void 0, void 0, vo
         }
     });
     backBtn.addEventListener("click", () => {
-        window.location.href = "/index.html";
+        window.location.href = "/";
     });
     refreshBtn.addEventListener("click", () => {
         loadAndRenderSession();

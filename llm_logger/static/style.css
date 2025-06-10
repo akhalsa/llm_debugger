@@ -331,13 +331,6 @@ li[data-role="tool"] {
 }
 
 /* === Navigation Buttons === */
-#nav-buttons {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-top: 1rem;
-}
-
 button {
   padding: 0.5rem 1rem;
   font-size: 1rem;
@@ -402,4 +395,42 @@ li.context-message * {
   font-size: 0.7rem !important;
   line-height: 1.25;
   opacity: 0.85;
+}
+
+/* === Navigation Buttons (Updated for Back + Refresh) === */
+#nav-buttons {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+#nav-buttons button {
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  background: #e9ecef;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+#nav-buttons button:hover:not(:disabled) {
+  background: #dee2e6;
+}
+
+#nav-buttons button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Optional: differentiate home/refresh if you like */
+#back-btn {
+  background-color: #f8f9fa;
+}
+
+#refresh-btn {
+  background-color: #fff3cd;
+  border-color: #ffeeba;
 }

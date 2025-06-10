@@ -31,122 +31,137 @@ document.addEventListener("DOMContentLoaded", async () => {
   const container = document.getElementById("entry-container")!;
   const prevBtn = document.getElementById("prev-btn") as HTMLButtonElement;
   const nextBtn = document.getElementById("next-btn") as HTMLButtonElement;
+  const backBtn = document.getElementById("back-btn") as HTMLButtonElement;
+  const refreshBtn = document.getElementById("refresh-btn") as HTMLButtonElement;
 
-  if (!container || !prevBtn || !nextBtn) return;
+  if (!container || !prevBtn || !nextBtn || !backBtn || !refreshBtn) return;
 
   const match = window.location.pathname.match(/\/sessions\/([^\/?#]+)/);
   const sessionId = match?.[1] || "demo";
-  try {
-    const res = await fetch(apiUrl(`/api/sessions/${sessionId}`));
-    const logEntries = await res.json();
 
-    if (!Array.isArray(logEntries)) {
-      container.textContent = "⚠️ Invalid session format.";
-      return;
-    }
+  let parsed: ViewModelEntry[] = [];
+  let currentIndex = 0;
 
-    const parsed = logEntries.map((entry, i) => {
-      const prev = i > 0 ? logEntries[i - 1] : undefined;
-      return parseLogEntry(entry, i, prev);
-    });
+  async function loadAndRenderSession() {
+    try {
+      const res = await fetch(apiUrl(`/api/sessions/${sessionId}`));
+      const logEntries = await res.json();
 
-    let currentIndex = 0;
+      if (!Array.isArray(logEntries)) {
+        container.textContent = "⚠️ Invalid session format.";
+        return;
+      }
 
-    function renderCurrentEntry() {
-      const entry = parsed[currentIndex];
-      container.innerHTML = `
-        <div>
-          <div><strong>Time:</strong> ${entry.startTime}</div>
-          <div class="context-section">
-            <button class="toggle-context">Show Context Messages</button>
-            <ul class="context-list" style="display: none;">
-              ${entry.contextMessages.map(m => `
-                <li data-role="${m.role}" class="context-message">
-                  <div class="role-label">${capitalize(m.role)}</div>
-                  <div class="message-body">
-                    ${
-                      m.tool_calls?.length
-                        ? m.tool_calls.map(tc => `
-                            <div class="tool-call">
-                              <strong>Tool:</strong> ${escapeHtml(tc.functionName)}
-                              <pre>${escapeHtml(typeof tc.arguments === "string" ? tc.arguments : JSON.stringify(tc.arguments, null, 2))}</pre>
-                            </div>
-                          `).join("")
-                        : m.role === "tool" && m.content
-                          ? `<div class="tool-response">
-                              <div class="tool-call-label">Tool Response:</div>
-                              <pre class="tool-response-body">${escapeHtml(prettyPrintJson(m.content))}</pre>
-                            </div>`
-                          : escapeHtml(m.content || "[no content]")
-                    }
-                  </div>
-                </li>
-              `).join("")}
-            </ul>
-          </div>
-
-          <div><strong>New Messages:</strong></div>
-          <ul>
-            ${entry.newMessages
-              .map((m) =>
-                `<li data-role="${m.role}">
-                  <div class="role-label">${capitalize(m.role)}</div>
-                  <div class="message-body">
-                    ${
-                      m.tool_calls?.length
-                        ? m.tool_calls.map(tc => `
-                            <div class="tool-call">
-                              <strong>Tool:</strong> ${escapeHtml(tc.functionName)}
-                              <pre>${escapeHtml(typeof tc.arguments === "string" ? tc.arguments : JSON.stringify(tc.arguments, null, 2))}</pre>
-                            </div>
-                          `).join("")
-                        : m.role === "tool" && m.content
-                          ? `<div class="tool-response">
-                              <div class="tool-call-label">Tool Response:</div>
-                              <pre class="tool-response-body">${escapeHtml(prettyPrintJson(m.content))}</pre>
-                            </div>`
-                          : escapeHtml(m.content || "[no content]")
-                    }
-                  </div>
-                </li>`
-              ).join("")}
-          </ul>
-        </div>
-      `;
-      const toggleBtn = document.querySelector(".toggle-context") as HTMLButtonElement;
-      toggleBtn?.addEventListener("click", () => {
-        const list = document.querySelector(".context-list") as HTMLElement;
-        if (!list || !toggleBtn) return;
-
-        const isOpen = list.style.display !== "none";
-        list.style.display = isOpen ? "none" : "block";
-        toggleBtn.textContent = isOpen ? "Show Context Messages" : "Hide Context Messages";
+      parsed = logEntries.map((entry, i) => {
+        const prev = i > 0 ? logEntries[i - 1] : undefined;
+        return parseLogEntry(entry, i, prev);
       });
 
-      prevBtn.disabled = currentIndex === 0;
-      nextBtn.disabled = currentIndex === parsed.length - 1;
+      currentIndex = parsed.length - 1; // Start at the last message
+      renderCurrentEntry();
+    } catch (err) {
+      console.error("Error loading session:", err);
+      container.textContent = "⚠️ Failed to load session data.";
     }
-    
-
-    prevBtn.addEventListener("click", () => {
-      if (currentIndex > 0) {
-        currentIndex--;
-        renderCurrentEntry();
-      }
-    });
-
-    nextBtn.addEventListener("click", () => {
-      if (currentIndex < parsed.length - 1) {
-        currentIndex++;
-        renderCurrentEntry();
-      }
-    });
-
-    renderCurrentEntry();
-  } catch (err) {
-    console.error("Error loading session:", err);
-    container.textContent = "⚠️ Failed to load session data.";
   }
+
+  function renderCurrentEntry() {
+    const entry = parsed[currentIndex];
+    container.innerHTML = `
+      <div>
+        <div><strong>Time:</strong> ${entry.startTime}</div>
+        <div class="context-section">
+          <button class="toggle-context">Show Context Messages</button>
+          <ul class="context-list" style="display: none;">
+            ${entry.contextMessages.map(m => `
+              <li data-role="${m.role}" class="context-message">
+                <div class="role-label">${capitalize(m.role)}</div>
+                <div class="message-body">
+                  ${
+                    m.tool_calls?.length
+                      ? m.tool_calls.map(tc => `
+                          <div class="tool-call">
+                            <strong>Tool:</strong> ${escapeHtml(tc.functionName)}
+                            <pre>${escapeHtml(typeof tc.arguments === "string" ? tc.arguments : JSON.stringify(tc.arguments, null, 2))}</pre>
+                          </div>
+                        `).join("")
+                      : m.role === "tool" && m.content
+                        ? `<div class="tool-response">
+                            <div class="tool-call-label">Tool Response:</div>
+                            <pre class="tool-response-body">${escapeHtml(prettyPrintJson(m.content))}</pre>
+                          </div>`
+                        : escapeHtml(m.content || "[no content]")
+                  }
+                </div>
+              </li>
+            `).join("")}
+          </ul>
+        </div>
+
+        <div><strong>New Messages:</strong></div>
+        <ul>
+          ${entry.newMessages.map((m) => `
+            <li data-role="${m.role}">
+              <div class="role-label">${capitalize(m.role)}</div>
+              <div class="message-body">
+                ${
+                  m.tool_calls?.length
+                    ? m.tool_calls.map(tc => `
+                        <div class="tool-call">
+                          <strong>Tool:</strong> ${escapeHtml(tc.functionName)}
+                          <pre>${escapeHtml(typeof tc.arguments === "string" ? tc.arguments : JSON.stringify(tc.arguments, null, 2))}</pre>
+                        </div>
+                      `).join("")
+                    : m.role === "tool" && m.content
+                      ? `<div class="tool-response">
+                          <div class="tool-call-label">Tool Response:</div>
+                          <pre class="tool-response-body">${escapeHtml(prettyPrintJson(m.content))}</pre>
+                        </div>`
+                      : escapeHtml(m.content || "[no content]")
+                }
+              </div>
+            </li>
+          `).join("")}
+        </ul>
+      </div>
+    `;
+
+    const toggleBtn = document.querySelector(".toggle-context") as HTMLButtonElement;
+    toggleBtn?.addEventListener("click", () => {
+      const list = document.querySelector(".context-list") as HTMLElement;
+      if (!list || !toggleBtn) return;
+      const isOpen = list.style.display !== "none";
+      list.style.display = isOpen ? "none" : "block";
+      toggleBtn.textContent = isOpen ? "Show Context Messages" : "Hide Context Messages";
+    });
+
+    prevBtn.disabled = currentIndex === 0;
+    nextBtn.disabled = currentIndex === parsed.length - 1;
+  }
+
+  prevBtn.addEventListener("click", () => {
+    if (currentIndex > 0) {
+      currentIndex--;
+      renderCurrentEntry();
+    }
+  });
+
+  nextBtn.addEventListener("click", () => {
+    if (currentIndex < parsed.length - 1) {
+      currentIndex++;
+      renderCurrentEntry();
+    }
+  });
+
+  backBtn.addEventListener("click", () => {
+    window.location.href = "/index.html";
+  });
+
+  refreshBtn.addEventListener("click", () => {
+    loadAndRenderSession();
+  });
+
+  await loadAndRenderSession();
 });
 
 
@@ -167,11 +182,7 @@ function parseLogEntry(entry: any, index: number, prevEntry?: any): ViewModelEnt
   } else if (prevEntry) {
     const prevMessages = extractMessages(prevEntry);
     contextMessages = prevMessages;
-
-    // naive deep comparison — works for small arrays
-    newMessages = messages.filter(
-      (m, i) => !deepEqual(m, prevMessages[i])
-    );
+    newMessages = messages.filter((m, i) => !deepEqual(m, prevMessages[i]));
   }
 
   return {

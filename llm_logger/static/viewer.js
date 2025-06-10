@@ -12,113 +12,129 @@ document.addEventListener("DOMContentLoaded", () => __awaiter(void 0, void 0, vo
     const container = document.getElementById("entry-container");
     const prevBtn = document.getElementById("prev-btn");
     const nextBtn = document.getElementById("next-btn");
-    if (!container || !prevBtn || !nextBtn)
+    const backBtn = document.getElementById("back-btn");
+    const refreshBtn = document.getElementById("refresh-btn");
+    if (!container || !prevBtn || !nextBtn || !backBtn || !refreshBtn)
         return;
     const match = window.location.pathname.match(/\/sessions\/([^\/?#]+)/);
     const sessionId = (match === null || match === void 0 ? void 0 : match[1]) || "demo";
-    try {
-        const res = yield fetch(apiUrl(`/api/sessions/${sessionId}`));
-        const logEntries = yield res.json();
-        if (!Array.isArray(logEntries)) {
-            container.textContent = "⚠️ Invalid session format.";
-            return;
-        }
-        const parsed = logEntries.map((entry, i) => {
-            const prev = i > 0 ? logEntries[i - 1] : undefined;
-            return parseLogEntry(entry, i, prev);
+    let parsed = [];
+    let currentIndex = 0;
+    function loadAndRenderSession() {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const res = yield fetch(apiUrl(`/api/sessions/${sessionId}`));
+                const logEntries = yield res.json();
+                if (!Array.isArray(logEntries)) {
+                    container.textContent = "⚠️ Invalid session format.";
+                    return;
+                }
+                parsed = logEntries.map((entry, i) => {
+                    const prev = i > 0 ? logEntries[i - 1] : undefined;
+                    return parseLogEntry(entry, i, prev);
+                });
+                currentIndex = parsed.length - 1; // Start at the last message
+                renderCurrentEntry();
+            }
+            catch (err) {
+                console.error("Error loading session:", err);
+                container.textContent = "⚠️ Failed to load session data.";
+            }
         });
-        let currentIndex = 0;
-        function renderCurrentEntry() {
-            const entry = parsed[currentIndex];
-            container.innerHTML = `
-        <div>
-          <div><strong>Time:</strong> ${entry.startTime}</div>
-          <div class="context-section">
-            <button class="toggle-context">Show Context Messages</button>
-            <ul class="context-list" style="display: none;">
-              ${entry.contextMessages.map(m => {
-                var _a;
-                return `
-                <li data-role="${m.role}" class="context-message">
-                  <div class="role-label">${capitalize(m.role)}</div>
-                  <div class="message-body">
-                    ${((_a = m.tool_calls) === null || _a === void 0 ? void 0 : _a.length)
-                    ? m.tool_calls.map(tc => `
-                            <div class="tool-call">
-                              <strong>Tool:</strong> ${escapeHtml(tc.functionName)}
-                              <pre>${escapeHtml(typeof tc.arguments === "string" ? tc.arguments : JSON.stringify(tc.arguments, null, 2))}</pre>
-                            </div>
-                          `).join("")
-                    : m.role === "tool" && m.content
-                        ? `<div class="tool-response">
-                              <div class="tool-call-label">Tool Response:</div>
-                              <pre class="tool-response-body">${escapeHtml(prettyPrintJson(m.content))}</pre>
-                            </div>`
-                        : escapeHtml(m.content || "[no content]")}
-                  </div>
-                </li>
-              `;
-            }).join("")}
-            </ul>
-          </div>
-
-          <div><strong>New Messages:</strong></div>
-          <ul>
-            ${entry.newMessages
-                .map((m) => {
-                var _a;
-                return `<li data-role="${m.role}">
-                  <div class="role-label">${capitalize(m.role)}</div>
-                  <div class="message-body">
-                    ${((_a = m.tool_calls) === null || _a === void 0 ? void 0 : _a.length)
-                    ? m.tool_calls.map(tc => `
-                            <div class="tool-call">
-                              <strong>Tool:</strong> ${escapeHtml(tc.functionName)}
-                              <pre>${escapeHtml(typeof tc.arguments === "string" ? tc.arguments : JSON.stringify(tc.arguments, null, 2))}</pre>
-                            </div>
-                          `).join("")
-                    : m.role === "tool" && m.content
-                        ? `<div class="tool-response">
-                              <div class="tool-call-label">Tool Response:</div>
-                              <pre class="tool-response-body">${escapeHtml(prettyPrintJson(m.content))}</pre>
-                            </div>`
-                        : escapeHtml(m.content || "[no content]")}
-                  </div>
-                </li>`;
-            }).join("")}
+    }
+    function renderCurrentEntry() {
+        const entry = parsed[currentIndex];
+        container.innerHTML = `
+      <div>
+        <div><strong>Time:</strong> ${entry.startTime}</div>
+        <div class="context-section">
+          <button class="toggle-context">Show Context Messages</button>
+          <ul class="context-list" style="display: none;">
+            ${entry.contextMessages.map(m => {
+            var _a;
+            return `
+              <li data-role="${m.role}" class="context-message">
+                <div class="role-label">${capitalize(m.role)}</div>
+                <div class="message-body">
+                  ${((_a = m.tool_calls) === null || _a === void 0 ? void 0 : _a.length)
+                ? m.tool_calls.map(tc => `
+                          <div class="tool-call">
+                            <strong>Tool:</strong> ${escapeHtml(tc.functionName)}
+                            <pre>${escapeHtml(typeof tc.arguments === "string" ? tc.arguments : JSON.stringify(tc.arguments, null, 2))}</pre>
+                          </div>
+                        `).join("")
+                : m.role === "tool" && m.content
+                    ? `<div class="tool-response">
+                            <div class="tool-call-label">Tool Response:</div>
+                            <pre class="tool-response-body">${escapeHtml(prettyPrintJson(m.content))}</pre>
+                          </div>`
+                    : escapeHtml(m.content || "[no content]")}
+                </div>
+              </li>
+            `;
+        }).join("")}
           </ul>
         </div>
-      `;
-            const toggleBtn = document.querySelector(".toggle-context");
-            toggleBtn === null || toggleBtn === void 0 ? void 0 : toggleBtn.addEventListener("click", () => {
-                const list = document.querySelector(".context-list");
-                if (!list || !toggleBtn)
-                    return;
-                const isOpen = list.style.display !== "none";
-                list.style.display = isOpen ? "none" : "block";
-                toggleBtn.textContent = isOpen ? "Show Context Messages" : "Hide Context Messages";
-            });
-            prevBtn.disabled = currentIndex === 0;
-            nextBtn.disabled = currentIndex === parsed.length - 1;
+
+        <div><strong>New Messages:</strong></div>
+        <ul>
+          ${entry.newMessages.map((m) => {
+            var _a;
+            return `
+            <li data-role="${m.role}">
+              <div class="role-label">${capitalize(m.role)}</div>
+              <div class="message-body">
+                ${((_a = m.tool_calls) === null || _a === void 0 ? void 0 : _a.length)
+                ? m.tool_calls.map(tc => `
+                        <div class="tool-call">
+                          <strong>Tool:</strong> ${escapeHtml(tc.functionName)}
+                          <pre>${escapeHtml(typeof tc.arguments === "string" ? tc.arguments : JSON.stringify(tc.arguments, null, 2))}</pre>
+                        </div>
+                      `).join("")
+                : m.role === "tool" && m.content
+                    ? `<div class="tool-response">
+                          <div class="tool-call-label">Tool Response:</div>
+                          <pre class="tool-response-body">${escapeHtml(prettyPrintJson(m.content))}</pre>
+                        </div>`
+                    : escapeHtml(m.content || "[no content]")}
+              </div>
+            </li>
+          `;
+        }).join("")}
+        </ul>
+      </div>
+    `;
+        const toggleBtn = document.querySelector(".toggle-context");
+        toggleBtn === null || toggleBtn === void 0 ? void 0 : toggleBtn.addEventListener("click", () => {
+            const list = document.querySelector(".context-list");
+            if (!list || !toggleBtn)
+                return;
+            const isOpen = list.style.display !== "none";
+            list.style.display = isOpen ? "none" : "block";
+            toggleBtn.textContent = isOpen ? "Show Context Messages" : "Hide Context Messages";
+        });
+        prevBtn.disabled = currentIndex === 0;
+        nextBtn.disabled = currentIndex === parsed.length - 1;
+    }
+    prevBtn.addEventListener("click", () => {
+        if (currentIndex > 0) {
+            currentIndex--;
+            renderCurrentEntry();
         }
-        prevBtn.addEventListener("click", () => {
-            if (currentIndex > 0) {
-                currentIndex--;
-                renderCurrentEntry();
-            }
-        });
-        nextBtn.addEventListener("click", () => {
-            if (currentIndex < parsed.length - 1) {
-                currentIndex++;
-                renderCurrentEntry();
-            }
-        });
-        renderCurrentEntry();
-    }
-    catch (err) {
-        console.error("Error loading session:", err);
-        container.textContent = "⚠️ Failed to load session data.";
-    }
+    });
+    nextBtn.addEventListener("click", () => {
+        if (currentIndex < parsed.length - 1) {
+            currentIndex++;
+            renderCurrentEntry();
+        }
+    });
+    backBtn.addEventListener("click", () => {
+        window.location.href = "/index.html";
+    });
+    refreshBtn.addEventListener("click", () => {
+        loadAndRenderSession();
+    });
+    yield loadAndRenderSession();
 }));
 function parseLogEntry(entry, index, prevEntry) {
     var _a, _b, _c, _d;
@@ -136,7 +152,6 @@ function parseLogEntry(entry, index, prevEntry) {
     else if (prevEntry) {
         const prevMessages = extractMessages(prevEntry);
         contextMessages = prevMessages;
-        // naive deep comparison — works for small arrays
         newMessages = messages.filter((m, i) => !deepEqual(m, prevMessages[i]));
     }
     return {

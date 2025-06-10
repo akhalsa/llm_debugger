@@ -90,6 +90,15 @@ If you want to modify the logger or UI code:
    npx tsc
    ```
 
+4. **To Build And Upload To Pypi:**
+    ```bash
+    rm -r dist
+    python3 -m build
+    twine upload dist/*
+    ```
+
+
+
 ---
 
 ## 🚀 Usage

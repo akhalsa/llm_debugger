@@ -155,9 +155,33 @@ def create_log_viewer_app(base_url=""):
 
     @app.get(f"/api/sessions/{{session_id}}")
     def get_session(session_id: str):
-        path = LOG_DIR / f"{session_id}.json"
+        # Define the path to the STATIC_ID_FILE_LOOKUP file
+        STATIC_ID_FILE_LOOKUP = PROJECT_ROOT / ".llm_logger" / "static_id_file_lookup.json"
+        
+        # Check if the lookup file exists
+        if not STATIC_ID_FILE_LOOKUP.exists():
+            return JSONResponse(status_code=404, content={"error": "Lookup file not found"})
+        
+        # Read the lookup file
+        try:
+            with open(STATIC_ID_FILE_LOOKUP, "r") as f:
+                static_id_file_lookup = json.load(f)
+        except Exception as e:
+            return JSONResponse(status_code=500, content={"error": f"Failed to read lookup file: {str(e)}"})
+        
+        # Check if the session_id exists in the lookup
+        if session_id not in static_id_file_lookup:
+            return JSONResponse(status_code=404, content={"error": "Session not found"})
+        
+        # Get the file path from the lookup
+        file_path = static_id_file_lookup[session_id]
+        path = Path(file_path)
+        
+        # Check if the file exists
         if not path.exists():
-            return JSONResponse(status_code=404, content={"error": "Not found"})
+            return JSONResponse(status_code=404, content={"error": "Session file not found"})
+        
+        # Load and return the session data
         with open(path) as f:
             return json.load(f)
             

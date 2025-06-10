@@ -1,3 +1,5 @@
+import { escapeHtml, apiUrl, prettyPrintJson, capitalize } from './common.js';
+
 type Role = "system" | "user" | "assistant" | "tool";
 
 type ToolCall = {
@@ -24,17 +26,6 @@ type ViewModelEntry = {
   contextMessages: ViewModelMessage[];
   newMessages: ViewModelMessage[];
 };
-
-function escapeHtml(str: string): string {
-  return (str || "").replace(/[&<>"']/g, m => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
-  })[m] || m);
-}
-
-function apiUrl(path: string): string {
-  const base = (window as any).BASE_URL || "";
-  return `${base}${path}`;
-}
 
 document.addEventListener("DOMContentLoaded", async () => {
   const container = document.getElementById("entry-container")!;
@@ -157,18 +148,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     container.textContent = "⚠️ Failed to load session data.";
   }
 });
-
-function prettyPrintJson(str: string): string {
-  try {
-    return JSON.stringify(JSON.parse(str), null, 2);
-  } catch {
-    return str;
-  }
-}
-
-function capitalize(str: string): string {
-  return str.charAt(0).toUpperCase() + str.slice(1);
-}
 
 
 function parseLogEntry(entry: any, index: number, prevEntry?: any): ViewModelEntry {

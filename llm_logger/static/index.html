@@ -1,11 +1,37 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LLM Debugger – Sessions</title>
-  <meta charset="utf-8" />
 </head>
 <body>
-  <h1>LLM Debugger Sessions</h1>
-  <ul id="session-list">Loading…</ul>
+  <div id="entry-viewer">
+    <header>
+      <h1>LLM Debugger</h1>
+      <p class="subtitle">A lightweight, local-first tool for inspecting LLM conversations</p>
+    </header>
+    
+    <main>
+      <section class="info-section">
+        <div class="info-card">
+          <h2>Sessions</h2>
+          <p>View and analyze your logged LLM conversations</p>
+        </div>
+      </section>
+      
+      <section id="session-list-container">
+        <div class="loading-state">Loading sessions...</div>
+      </section>
+    </main>
+    
+    <footer>
+      <div class="footer-links">
+        <a href="https://github.com/akhalsa/llm_debugger" target="_blank">GitHub</a>
+        <span class="separator">|</span>
+        <a href="https://github.com/akhalsa/llm_debugger/issues" target="_blank">Report Issues</a>
+      </div>
+    </footer>
+  </div>
 </body>
 </html>

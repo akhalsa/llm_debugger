@@ -1,4 +1,3 @@
-"use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -8,15 +7,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-function escapeHtml(str) {
-    return (str || "").replace(/[&<>"']/g, m => ({
-        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
-    })[m] || m);
-}
-function apiUrl(path) {
-    const base = window.BASE_URL || "";
-    return `${base}${path}`;
-}
+import { escapeHtml, apiUrl, prettyPrintJson, capitalize } from './common.js';
 document.addEventListener("DOMContentLoaded", () => __awaiter(void 0, void 0, void 0, function* () {
     const container = document.getElementById("entry-container");
     const prevBtn = document.getElementById("prev-btn");
@@ -129,17 +120,6 @@ document.addEventListener("DOMContentLoaded", () => __awaiter(void 0, void 0, vo
         container.textContent = "⚠️ Failed to load session data.";
     }
 }));
-function prettyPrintJson(str) {
-    try {
-        return JSON.stringify(JSON.parse(str), null, 2);
-    }
-    catch (_a) {
-        return str;
-    }
-}
-function capitalize(str) {
-    return str.charAt(0).toUpperCase() + str.slice(1);
-}
 function parseLogEntry(entry, index, prevEntry) {
     var _a, _b, _c, _d;
     const latency = (_a = entry.latency_ms) !== null && _a !== void 0 ? _a : computeLatency(entry);

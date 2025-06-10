@@ -13,6 +13,171 @@ body {
   color: #222;
 }
 
+/* === Header Styles === */
+header {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+header h1 {
+  font-size: 2.2rem;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.subtitle {
+  font-size: 1rem;
+  color: #666;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* === Info Section === */
+.info-section {
+  margin-bottom: 2rem;
+}
+
+.info-card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  margin-bottom: 1.5rem;
+}
+
+.info-card h2 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.info-card p {
+  color: #666;
+  line-height: 1.5;
+}
+
+/* === Session List Styles === */
+#session-list-container {
+  margin-bottom: 2rem;
+}
+
+.loading-state, .empty-state, .error-state {
+  text-align: center;
+  padding: 2rem;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.empty-state p, .error-state p {
+  margin-bottom: 0.5rem;
+  color: #666;
+}
+
+.search-container {
+  margin-bottom: 1rem;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.date-group {
+  margin-bottom: 2rem;
+}
+
+.date-header {
+  font-size: 1.2rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #eee;
+  color: #555;
+}
+
+.session-list {
+  list-style: none;
+  padding: 0;
+}
+
+.session-item {
+  margin-bottom: 0.5rem;
+}
+
+.session-link {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  text-decoration: none;
+  color: #333;
+  transition: background-color 0.2s ease;
+}
+
+.session-link:hover {
+  background-color: #f0f7ff;
+}
+
+.session-time {
+  font-weight: 500;
+}
+
+.session-info {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.session-model, .session-provider {
+  font-size: 0.8rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  background: #f0f0f0;
+  color: #666;
+}
+
+.session-model {
+  background: #e7f0fa;
+  color: #0066cc;
+}
+
+.session-provider {
+  background: #e6f4ea;
+  color: #28a745;
+}
+
+/* === Footer === */
+footer {
+  text-align: center;
+  padding-top: 1.5rem;
+  margin-top: 2rem;
+  border-top: 1px solid #eee;
+}
+
+.footer-links {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.footer-links a {
+  color: #0066cc;
+  text-decoration: none;
+}
+
+.footer-links a:hover {
+  text-decoration: underline;
+}
+
+.separator {
+  color: #ddd;
+}
+
 /* === Container === */
 #entry-viewer {
   max-width: 700px;

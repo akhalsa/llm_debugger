@@ -39,7 +39,7 @@ def inject_base_url(content: str, base_url: str, assets: List[str]) -> str:
     for filename in assets:
         path = f"{base_url}/static/{filename}"
         if filename.endswith(".js"):
-            tags.append(f'<script defer src="{path}"></script>')
+            tags.append(f'<script type="module" defer src="{path}"></script>')
         elif filename.endswith(".css"):
             tags.append(f'<link rel="stylesheet" href="{path}">')
         else:
@@ -64,7 +64,7 @@ def create_log_viewer_app(base_url=""):
             content = f.read()
         
         # Inject the base_url as a JavaScript variable
-        modified = inject_base_url(content, app.state.base_url, ["index.js"])
+        modified = inject_base_url(content, app.state.base_url, ["style.css", "index.js"])
         return HTMLResponse(content=modified)
 
     @app.get(f"/sessions/{{session_id}}", response_class=HTMLResponse)

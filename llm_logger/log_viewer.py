@@ -39,7 +39,7 @@ def inject_base_url(content: str, base_url: str, assets: List[str]) -> str:
     for filename in assets:
         path = f"{base_url}/static/{filename}"
         if filename.endswith(".js"):
-            tags.append(f'<script defer src="{path}"></script>')
+            tags.append(f'<script type="module" defer src="{path}"></script>')
         elif filename.endswith(".css"):
             tags.append(f'<link rel="stylesheet" href="{path}">')
         else:
@@ -64,7 +64,7 @@ def create_log_viewer_app(base_url=""):
             content = f.read()
         
         # Inject the base_url as a JavaScript variable
-        modified = inject_base_url(content, app.state.base_url, ["index.js"])
+        modified = inject_base_url(content, app.state.base_url, ["style.css", "index.js"])
         return HTMLResponse(content=modified)
 
     @app.get(f"/sessions/{{session_id}}", response_class=HTMLResponse)
@@ -77,15 +77,111 @@ def create_log_viewer_app(base_url=""):
         return HTMLResponse(content=modified)
 
     @app.get(f"/api/sessions")
-    def list_sessions():
-        files = sorted(LOG_DIR.glob("*.json"))
-        return [f.name for f in files]
+    def list_sessions(date: str ):
+        """
+        List all sessions filtered by date.
+        
+        Args:
+            date:  date string in YYYY-MM-DD format
+        
+        Returns:
+            List of session objects with static_id and most_recent_message
+        """
+        if not date:
+            return []
+        
+        # If date is provided, look in that specific date directory
+        date_dir = LOG_DIR / date
+        if not date_dir.exists():
+            return []
+        files = sorted(date_dir.glob("*.json"))
+
+        result = []
+        for file_path in files:
+            try:
+                static_id = file_path.stem
+                # Read the log file
+                with open(file_path) as f:
+                    logs = json.load(f)
+                if not logs or not isinstance(logs, list):
+                    continue
+                most_recent_entry = logs[-1]
+                # Extract the most recent message (assistant's response)
+                most_recent_message = None
+                
+                # Try to get from the response structure
+                if "response" in most_recent_entry and "choices" in most_recent_entry["response"]:
+                    choices = most_recent_entry["response"]["choices"]
+                    if choices and len(choices) > 0 and "message" in choices[0]:
+                        message = choices[0]["message"]
+                        
+                        # Check if it's a regular message with content
+                        if message.get("content"):
+                            most_recent_message = {
+                                "starttime": most_recent_entry.get("start_time", ""),
+                                "sender_role": message.get("role", "assistant"),
+                                "message": message.get("content", "")
+                            }
+                        # Check if it's a tool call
+                        elif message.get("tool_calls"):
+                            tool_calls = message.get("tool_calls", [])
+                            if tool_calls:
+                                # Get the first tool call
+                                tool_call = tool_calls[0]
+                                tool_name = tool_call.get("function", {}).get("name", "unknown_tool")
+                                tool_args = tool_call.get("function", {}).get("arguments", "{}")
+                                
+                                most_recent_message = {
+                                    "starttime": most_recent_entry.get("start_time", ""),
+                                    "sender_role": "assistant",
+                                    "message": f"Tool Call: {tool_name}({tool_args})"
+                                }
+                
+                # Use the static_thread_id from the entry if available
+                entry_static_id = most_recent_entry.get("static_thread_id", static_id)
+                
+                if most_recent_message:
+                    result.append({
+                        "static_id": entry_static_id,
+                        "most_recent_message": most_recent_message
+                    })
+            except Exception as e:
+                # Skip files that can't be processed
+                print(f"Error processing {file_path}: {e}")
+                continue
+        
+        return result
+
 
     @app.get(f"/api/sessions/{{session_id}}")
     def get_session(session_id: str):
-        path = LOG_DIR / f"{session_id}.json"
+        # Define the path to the STATIC_ID_FILE_LOOKUP file
+        STATIC_ID_FILE_LOOKUP = PROJECT_ROOT / ".llm_logger" / "static_id_file_lookup.json"
+        
+        # Check if the lookup file exists
+        if not STATIC_ID_FILE_LOOKUP.exists():
+            return JSONResponse(status_code=404, content={"error": "Lookup file not found"})
+        
+        # Read the lookup file
+        try:
+            with open(STATIC_ID_FILE_LOOKUP, "r") as f:
+                static_id_file_lookup = json.load(f)
+        except Exception as e:
+            return JSONResponse(status_code=500, content={"error": f"Failed to read lookup file: {str(e)}"})
+        
+        # Check if the session_id exists in the lookup
+        if session_id not in static_id_file_lookup:
+            return JSONResponse(status_code=404, content={"error": "Session not found"})
+        
+        # Get the file path from the lookup
+        file_path = static_id_file_lookup[session_id]
+        path = Path(file_path)
+        
+        # Check if the file exists
         if not path.exists():
-            return JSONResponse(status_code=404, content={"error": "Not found"})
+            return JSONResponse(status_code=404, content={"error": "Session file not found"})
+        
+        # Load and return the session data
         with open(path) as f:
             return json.load(f)
             

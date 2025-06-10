@@ -6,5 +6,5 @@
     "strict": true,
     "allowJs": true
   },
-  "include": ["viewer.ts"]
+  "include": ["viewer.ts", "index.ts"]
 }

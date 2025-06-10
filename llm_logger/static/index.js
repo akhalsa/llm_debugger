@@ -80,15 +80,20 @@ function renderSessionsList(sessions) {
         <ul class="session-list">
     `;
         sessionsForDate.forEach(session => {
-            var _a, _b;
+            var _a;
             const baseUrl = window.BASE_URL || '';
             html += `
         <li class="session-item">
           <a href="${baseUrl}/sessions/${encodeURIComponent(session.id)}" class="session-link">
-            <div class="session-time">${escapeHtml(session.displayTime)}</div>
-            <div class="session-info">
-              ${((_a = session.metadata) === null || _a === void 0 ? void 0 : _a.model) ? `<span class="session-model">${escapeHtml(session.metadata.model)}</span>` : ''}
-              ${((_b = session.metadata) === null || _b === void 0 ? void 0 : _b.provider) ? `<span class="session-provider">${escapeHtml(session.metadata.provider)}</span>` : ''}
+            <div class="session-id">${escapeHtml(session.id.substring(0, 8))}...</div>
+            <div class="session-content">
+              ${session.message ?
+                `<div class="message-container">
+                  <div class="sender-name">${escapeHtml(((_a = session.metadata) === null || _a === void 0 ? void 0 : _a.provider) || 'Assistant')}:</div>
+                  <div class="message-text">${escapeHtml(session.message.substring(0, 100))}${session.message.length > 100 ? '...' : ''}</div>
+                </div>` :
+                `<div class="empty-message">No message content</div>`}
+              <div class="session-time-small">${escapeHtml(session.displayTime)}</div>
             </div>
           </a>
         </li>
@@ -135,18 +140,36 @@ function renderSessionsList(sessions) {
 function fetchAndDisplaySessions() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const res = yield fetch(apiUrl('/api/sessions'));
-            const sessionFilenames = yield res.json();
+            // Get today's date in YYYY-MM-DD format using local time (not UTC)
+            const today = new Date();
+            const year = today.getFullYear();
+            const monthNum = today.getMonth() + 1; // Months are 0-indexed
+            const dayNum = today.getDate();
+            // Format month and day to ensure they have 2 digits
+            const month = monthNum < 10 ? '0' + monthNum : String(monthNum);
+            const day = dayNum < 10 ? '0' + dayNum : String(dayNum);
+            const dateString = `${year}-${month}-${day}`;
+            const res = yield fetch(apiUrl(`/api/sessions?date=${dateString}`));
+            const sessionData = yield res.json();
             // Process the session data
-            const sessions = sessionFilenames.map((filename) => {
-                const id = filename.replace(/\.json$/, "");
-                const { displayDate, displayTime } = formatTimestamp(id);
+            const sessions = sessionData.map((session) => {
+                var _a, _b, _c;
+                const id = session.static_id;
+                // Try to extract date from the static_id or use the starttime from most_recent_message
+                let timestamp = id;
+                if ((_a = session.most_recent_message) === null || _a === void 0 ? void 0 : _a.starttime) {
+                    timestamp = session.most_recent_message.starttime;
+                }
+                const { displayDate, displayTime } = formatTimestamp(timestamp);
                 return {
                     id,
-                    timestamp: id,
+                    timestamp,
                     displayDate,
                     displayTime,
-                    // Metadata will be populated later if available
+                    message: (_b = session.most_recent_message) === null || _b === void 0 ? void 0 : _b.message,
+                    metadata: {
+                        provider: ((_c = session.most_recent_message) === null || _c === void 0 ? void 0 : _c.sender_role) || 'Assistant'
+                    }
                 };
             });
             // Render the sessions list

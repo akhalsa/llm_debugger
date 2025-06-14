@@ -26,6 +26,11 @@ Ideal for developers building agent workflows, chat interfaces, or prompt-based 
 * 👐 **Open source (MIT)** – Lightweight, auditable, and easy to extend  
 
 ---
+## 🎥 Demo
+
+![LLM Logger Demo](https://i.imgur.com/Vg92ip6.gif)
+
+---
 
 ## 📦 Installation
 
@@ -91,6 +96,7 @@ If you want to modify the logger or UI code:
    ```
 
 4. **To Build And Upload To Pypi:**
+Note: Build Front End Locally FIRST
     ```bash
     rm -r dist
     python3 -m build

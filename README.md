@@ -33,87 +33,6 @@ Ideal for developers building agent workflows, chat interfaces, or prompt-based 
 
 ---
 
-## 🏷️ How Automatic Session Tagging Works: Technical Overview
-
-### Message Fingerprinting
-
-```python
-# logger.py, lines 32-38
-def hash_messages(messages):
-    normalized = normalize_messages(messages)
-    string = json.dumps(normalized, sort_keys=True, ensure_ascii=False)
-    return hashlib.sha256(string.encode("utf-8")).hexdigest()[:12]
-```
-
-Each conversation is uniquely identified by creating a SHA-256 hash of its normalized messages, truncated to 12 characters for readability.
-
-### Conversation Continuity Detection
-
-```python
-# logger.py, lines 79-85
-def find_existing_prefix_hash(messages):
-    for i in range(len(messages) - 1, 0, -1):
-        prefix = messages[:i]
-        prefix_hash = hash_messages(prefix)
-        if prefix_hash in message_hash_lookup:
-            return prefix_hash
-    return None
-```
-
-The system detects conversation continuity by searching for prefix matches - checking if earlier parts of the conversation were seen before.
-
-### Session ID Management
-
-```python
-# logger.py, lines 87-90, 103-106
-def resolve_static_thread_id(messages, static_id: str | None = None):
-    msg_hash = hash_messages(messages)
-    # ...
-    # For new conversations:
-    static_id = static_id or str(uuid.uuid4())[:8]
-    log_file_path = str(LOG_DIR / datetime.now().strftime("%Y-%m-%d") / f"{static_id}.json")
-    static_id_file_lookup[static_id] = log_file_path
-```
-
-New conversations get a UUID-based static ID, while continuations inherit the ID from their prefix. Log files are organized by date and session ID.
-
-### Persistent Lookup Tables
-
-```python
-# logger.py, lines 42-43
-MESSAGE_HASH_LOOKUP = PROJECT_ROOT / ".llm_logger" / "message_hashes.json"
-STATIC_ID_FILE_LOOKUP = PROJECT_ROOT / ".llm_logger" / "static_id_file_lookup.json"
-```
-
-Two JSON files maintain session continuity across application restarts:
-- `message_hashes.json`: Maps message hashes to static IDs and log paths
-- `static_id_file_lookup.json`: Maps static IDs to log file paths
-
-### Log Entry Creation
-
-```python
-# logger.py, lines 117-131
-def log_call(*, provider, args, kwargs, response, request_start_timestamp, request_end_timestamp, logging_account_id, session_id: str | None = None):
-    messages = kwargs.get("messages", [])
-    thread_data = resolve_static_thread_id(messages, session_id)
-    # ...
-    log_entry = {
-        # ...
-        "static_thread_id": thread_data[MESSAGE_HASH_LOOKUP_STATIC_ID],
-    }
-```
-
-When logging an API call, the system resolves the thread ID and includes it in the log entry, maintaining the conversation thread.
-
-### Technical Benefits
-
-1. **Zero configuration**: No manual session tracking required
-2. **Stateless operation**: Compatible with serverless architectures
-3. **Deterministic identification**: Reliable conversation fingerprinting
-4. **Restart resilience**: Maintains context across application restarts
-
----
-
 ## 📣 Model Support
 
 Currently supports:
@@ -293,7 +212,86 @@ CMD bash -c "\
 > 🔁 **Not using `uvicorn`?**  
 > Replace `uvicorn your_app_module:app --host 0.0.0.0 --port 5000` with whatever launches your app — it could be Flask, Gunicorn, a background service, or anything else.
 
+---
 
+## 🏷️ How Automatic Session Tagging Works: Technical Overview
+
+### Message Fingerprinting
+
+```python
+# logger.py, lines 32-38
+def hash_messages(messages):
+    normalized = normalize_messages(messages)
+    string = json.dumps(normalized, sort_keys=True, ensure_ascii=False)
+    return hashlib.sha256(string.encode("utf-8")).hexdigest()[:12]
+```
+
+Each conversation is uniquely identified by creating a SHA-256 hash of its normalized messages, truncated to 12 characters for readability.
+
+### Conversation Continuity Detection
+
+```python
+# logger.py, lines 79-85
+def find_existing_prefix_hash(messages):
+    for i in range(len(messages) - 1, 0, -1):
+        prefix = messages[:i]
+        prefix_hash = hash_messages(prefix)
+        if prefix_hash in message_hash_lookup:
+            return prefix_hash
+    return None
+```
+
+The system detects conversation continuity by searching for prefix matches - checking if earlier parts of the conversation were seen before.
+
+### Session ID Management
+
+```python
+# logger.py, lines 87-90, 103-106
+def resolve_static_thread_id(messages, static_id: str | None = None):
+    msg_hash = hash_messages(messages)
+    # ...
+    # For new conversations:
+    static_id = static_id or str(uuid.uuid4())[:8]
+    log_file_path = str(LOG_DIR / datetime.now().strftime("%Y-%m-%d") / f"{static_id}.json")
+    static_id_file_lookup[static_id] = log_file_path
+```
+
+New conversations get a UUID-based static ID, while continuations inherit the ID from their prefix. Log files are organized by date and session ID.
+
+### Persistent Lookup Tables
+
+```python
+# logger.py, lines 42-43
+MESSAGE_HASH_LOOKUP = PROJECT_ROOT / ".llm_logger" / "message_hashes.json"
+STATIC_ID_FILE_LOOKUP = PROJECT_ROOT / ".llm_logger" / "static_id_file_lookup.json"
+```
+
+Two JSON files maintain session continuity across application restarts:
+- `message_hashes.json`: Maps message hashes to static IDs and log paths
+- `static_id_file_lookup.json`: Maps static IDs to log file paths
+
+### Log Entry Creation
+
+```python
+# logger.py, lines 117-131
+def log_call(*, provider, args, kwargs, response, request_start_timestamp, request_end_timestamp, logging_account_id, session_id: str | None = None):
+    messages = kwargs.get("messages", [])
+    thread_data = resolve_static_thread_id(messages, session_id)
+    # ...
+    log_entry = {
+        # ...
+        "static_thread_id": thread_data[MESSAGE_HASH_LOOKUP_STATIC_ID],
+    }
+```
+
+When logging an API call, the system resolves the thread ID and includes it in the log entry, maintaining the conversation thread.
+
+### Technical Benefits
+
+1. **Zero configuration**: No manual session tracking required
+2. **Stateless operation**: Compatible with serverless architectures
+3. **Deterministic identification**: Reliable conversation fingerprinting
+4. **Restart resilience**: Maintains context across application restarts
 
 ---
 

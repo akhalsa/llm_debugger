@@ -1,6 +1,6 @@
-# Log and View Python Based LLM Conversations
+# LLM Debugger - Log and View Python Based LLM Conversations
 
-**LLM Logger** is a lightweight, local-first tool for inspecting and understanding how your application interacts with large language models like OpenAI GPT-4 or Anthropic Claude.
+**LLM Logger** is a lightweight, local-first tool for inspecting and understanding how your application interacts with large language models like OpenAI GPT-4.
 
 It helps you:
 
@@ -26,9 +26,105 @@ Ideal for developers building agent workflows, chat interfaces, or prompt-based 
 * 👐 **Open source (MIT)** – Lightweight, auditable, and easy to extend  
 
 ---
+
 ## 🎥 Demo
 
 ![LLM Logger Demo](https://raw.githubusercontent.com/akhalsa/LLM-Debugger-Tools/refs/heads/main/demo.gif)
+
+---
+
+## 🏷️ How Automatic Session Tagging Works: Technical Overview
+
+### Message Fingerprinting
+
+```python
+# logger.py, lines 32-38
+def hash_messages(messages):
+    normalized = normalize_messages(messages)
+    string = json.dumps(normalized, sort_keys=True, ensure_ascii=False)
+    return hashlib.sha256(string.encode("utf-8")).hexdigest()[:12]
+```
+
+Each conversation is uniquely identified by creating a SHA-256 hash of its normalized messages, truncated to 12 characters for readability.
+
+### Conversation Continuity Detection
+
+```python
+# logger.py, lines 79-85
+def find_existing_prefix_hash(messages):
+    for i in range(len(messages) - 1, 0, -1):
+        prefix = messages[:i]
+        prefix_hash = hash_messages(prefix)
+        if prefix_hash in message_hash_lookup:
+            return prefix_hash
+    return None
+```
+
+The system detects conversation continuity by searching for prefix matches - checking if earlier parts of the conversation were seen before.
+
+### Session ID Management
+
+```python
+# logger.py, lines 87-90, 103-106
+def resolve_static_thread_id(messages, static_id: str | None = None):
+    msg_hash = hash_messages(messages)
+    # ...
+    # For new conversations:
+    static_id = static_id or str(uuid.uuid4())[:8]
+    log_file_path = str(LOG_DIR / datetime.now().strftime("%Y-%m-%d") / f"{static_id}.json")
+    static_id_file_lookup[static_id] = log_file_path
+```
+
+New conversations get a UUID-based static ID, while continuations inherit the ID from their prefix. Log files are organized by date and session ID.
+
+### Persistent Lookup Tables
+
+```python
+# logger.py, lines 42-43
+MESSAGE_HASH_LOOKUP = PROJECT_ROOT / ".llm_logger" / "message_hashes.json"
+STATIC_ID_FILE_LOOKUP = PROJECT_ROOT / ".llm_logger" / "static_id_file_lookup.json"
+```
+
+Two JSON files maintain session continuity across application restarts:
+- `message_hashes.json`: Maps message hashes to static IDs and log paths
+- `static_id_file_lookup.json`: Maps static IDs to log file paths
+
+### Log Entry Creation
+
+```python
+# logger.py, lines 117-131
+def log_call(*, provider, args, kwargs, response, request_start_timestamp, request_end_timestamp, logging_account_id, session_id: str | None = None):
+    messages = kwargs.get("messages", [])
+    thread_data = resolve_static_thread_id(messages, session_id)
+    # ...
+    log_entry = {
+        # ...
+        "static_thread_id": thread_data[MESSAGE_HASH_LOOKUP_STATIC_ID],
+    }
+```
+
+When logging an API call, the system resolves the thread ID and includes it in the log entry, maintaining the conversation thread.
+
+### Technical Benefits
+
+1. **Zero configuration**: No manual session tracking required
+2. **Stateless operation**: Compatible with serverless architectures
+3. **Deterministic identification**: Reliable conversation fingerprinting
+4. **Restart resilience**: Maintains context across application restarts
+
+---
+
+## 📣 Model Support
+
+Currently supports:
+
+- ✅ OpenAI (`openai.ChatCompletion` and `openai.Completion` APIs)
+
+Planned:
+
+- ⏳ Anthropic Claude (`anthropic` Python SDK)
+
+> Want Anthropic support soon? Upvote or open an issue [here](https://github.com/akhalsa/llm_debugger/issues).
 
 ---
 
@@ -38,7 +134,7 @@ Ideal for developers building agent workflows, chat interfaces, or prompt-based 
 
 #### Option 1: From PyPI (Recommended for most users)
 
-Install the prebuilt package if you just want to use the tool:
+Install the prebuilt package:
 
 ```bash
 pip install llm-logger
@@ -52,12 +148,12 @@ Clone the repository and install:
 # Clone the repo
 git clone https://github.com/akhalsa/llm_debugger.git
 
-# rebuild ui (optional)
+# Rebuild UI (optional)
 cd llm_debugger/llm_logger/front_end
 npm install
 npx tsc
 
-# Install from the local copy
+# Install from local source
 pip install ./llm_debugger
 ```
 
@@ -102,9 +198,6 @@ Note: Build Front End Locally FIRST
     python3 -m build
     twine upload dist/*
     ```
-
-
-
 ---
 
 ## 🚀 Usage
@@ -138,7 +231,7 @@ response = openai_client.chat.completions.create(
 )
 ```
 
-This writes logs to `.llm_logger/logs/`.
+Logs are written to `.llm_logger/logs/`.
 
 ---
 

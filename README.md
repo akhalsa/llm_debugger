@@ -28,7 +28,7 @@ Ideal for developers building agent workflows, chat interfaces, or prompt-based 
 ---
 ## 🎥 Demo
 
-![LLM Logger Demo](https://i.imgur.com/Vg92ip6.gif)
+![LLM Logger Demo](https://raw.githubusercontent.com/akhalsa/LLM-Debugger-Tools/refs/heads/main/demo.gif)
 
 ---
 

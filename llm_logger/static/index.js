@@ -13,9 +13,9 @@ function pad2(n) {
     return n < 10 ? '0' + n : String(n);
 }
 // === Helper: Format timestamp for display ===
-function formatTimestamp(id) {
-    if (/^\d{4}-\d{2}-\d{2}T\d{2}/.test(id)) {
-        const date = new Date(id.slice(0, 19));
+function formatTimestamp(timestamp) {
+    try {
+        const date = new Date(timestamp);
         return {
             displayDate: date.toLocaleDateString(undefined, {
                 weekday: 'short',
@@ -29,31 +29,35 @@ function formatTimestamp(id) {
             })
         };
     }
-    return {
-        displayDate: 'Unknown Date',
-        displayTime: id
-    };
+    catch (_a) {
+        return {
+            displayDate: 'Unknown Date',
+            displayTime: timestamp
+        };
+    }
 }
 // === Helper: Get today's date in YYYY-MM-DD format ===
 function getTodayDate() {
     const today = new Date();
     return `${today.getFullYear()}-${pad2(today.getMonth() + 1)}-${pad2(today.getDate())}`;
 }
-// === Group sessions by displayDate ===
-function groupSessionsByDate(sessions) {
-    return sessions.reduce((groups, session) => {
-        const { displayDate } = session;
-        if (!groups[displayDate])
-            groups[displayDate] = [];
-        groups[displayDate].push(session);
-        return groups;
-    }, {});
-}
 // === Render the sessions list ===
-function renderSessionsList(sessions, dateString) {
+function renderSessionsList(sessions, selectedDateString) {
     const container = document.getElementById('session-list-container');
     if (!container)
         return;
+    // Sort sessions by timestamp descending (most recent first)
+    const sortedSessions = [...sessions].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+    // Group by ISO date (YYYY-MM-DD)
+    const groupedSessions = sortedSessions.reduce((groups, session) => {
+        const isoDate = session.timestamp.slice(0, 10);
+        if (!groups[isoDate])
+            groups[isoDate] = [];
+        groups[isoDate].push(session);
+        return groups;
+    }, {});
+    // Sort date keys descending
+    const sortedDates = Object.keys(groupedSessions).sort((a, b) => b.localeCompare(a));
     let html = `
     <div class="date-picker-container">
       <label for="date-picker">Select Date: </label>
@@ -70,25 +74,12 @@ function renderSessionsList(sessions, dateString) {
     `;
     }
     else {
-        const groupedSessions = groupSessionsByDate(sessions);
-        const sortedDates = Object.keys(groupedSessions).sort((a, b) => {
-            if (a === 'Unknown Date')
-                return 1;
-            if (b === 'Unknown Date')
-                return -1;
-            return new Date(b).getTime() - new Date(a).getTime();
-        });
-        sortedDates.forEach(date => {
+        for (const date of sortedDates) {
             const sessionsForDate = groupedSessions[date];
-            sessionsForDate.sort((a, b) => {
-                if (!/^\d{4}-\d{2}-\d{2}T\d{2}/.test(a.id) || !/^\d{4}-\d{2}-\d{2}T\d{2}/.test(b.id)) {
-                    return a.id.localeCompare(b.id);
-                }
-                return b.id.localeCompare(a.id);
-            });
+            const displayDate = new Date(date).toDateString();
             html += `
         <div class="date-group">
-          <h2 class="date-header">${escapeHtml(date)}</h2>
+          <h2 class="date-header">${escapeHtml(displayDate)}</h2>
           <ul class="session-list">
       `;
             sessionsForDate.forEach(session => {
@@ -96,6 +87,7 @@ function renderSessionsList(sessions, dateString) {
                 const baseUrl = window.BASE_URL || '';
                 const senderRole = ((_a = session.metadata) === null || _a === void 0 ? void 0 : _a.provider) || 'assistant';
                 const capitalizedSenderRole = capitalize(senderRole);
+                const { displayTime } = formatTimestamp(session.timestamp);
                 html += `
           <li class="session-item">
             <a href="${baseUrl}/sessions/${encodeURIComponent(session.id)}" class="session-link">
@@ -106,7 +98,7 @@ function renderSessionsList(sessions, dateString) {
                     : `<div class="empty-message">No message content</div>`}
                 <div class="session-footer">
                   <span class="session-id-small">${escapeHtml(session.id.substring(0, 8))}...</span>
-                  <span class="session-time-small">${escapeHtml(session.displayTime)}</span>
+                  <span class="session-time-small">${escapeHtml(displayTime)}</span>
                 </div>
               </div>
             </a>
@@ -114,15 +106,14 @@ function renderSessionsList(sessions, dateString) {
         `;
             });
             html += `</ul></div>`;
-        });
+        }
     }
     html += `</div>`;
     container.innerHTML = html;
-    // === Reattach date picker listener ===
     const datePicker = document.getElementById('date-picker');
     if (datePicker) {
         if (!datePicker.value)
-            datePicker.value = dateString;
+            datePicker.value = selectedDateString;
         datePicker.addEventListener('change', handleDateChange);
     }
 }
@@ -137,12 +128,9 @@ function fetchAndDisplaySessions(dateString) {
                 var _a, _b, _c;
                 const id = session.static_id;
                 const timestamp = ((_a = session.most_recent_message) === null || _a === void 0 ? void 0 : _a.starttime) || id;
-                const { displayDate, displayTime } = formatTimestamp(timestamp);
                 return {
                     id,
                     timestamp,
-                    displayDate,
-                    displayTime,
                     message: (_b = session.most_recent_message) === null || _b === void 0 ? void 0 : _b.message,
                     metadata: {
                         provider: ((_c = session.most_recent_message) === null || _c === void 0 ? void 0 : _c.sender_role) || 'Assistant'

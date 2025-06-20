@@ -10,8 +10,6 @@ type MostRecentMessage = {
 type Session = {
   id: string;
   timestamp: string;
-  displayDate: string;
-  displayTime: string;
   message?: string;
   metadata?: {
     model?: string;
@@ -20,7 +18,7 @@ type Session = {
 };
 
 type GroupedSessions = {
-  [date: string]: Session[];
+  [isoDate: string]: Session[];
 };
 
 // === Helper: Pad numbers to 2 digits ===
@@ -29,9 +27,9 @@ function pad2(n: number): string {
 }
 
 // === Helper: Format timestamp for display ===
-function formatTimestamp(id: string): { displayDate: string; displayTime: string } {
-  if (/^\d{4}-\d{2}-\d{2}T\d{2}/.test(id)) {
-    const date = new Date(id.slice(0, 19));
+function formatTimestamp(timestamp: string): { displayDate: string; displayTime: string } {
+  try {
+    const date = new Date(timestamp);
     return {
       displayDate: date.toLocaleDateString(undefined, {
         weekday: 'short',
@@ -44,11 +42,12 @@ function formatTimestamp(id: string): { displayDate: string; displayTime: string
         minute: '2-digit'
       })
     };
+  } catch {
+    return {
+      displayDate: 'Unknown Date',
+      displayTime: timestamp
+    };
   }
-  return {
-    displayDate: 'Unknown Date',
-    displayTime: id
-  };
 }
 
 // === Helper: Get today's date in YYYY-MM-DD format ===
@@ -57,20 +56,24 @@ function getTodayDate(): string {
   return `${today.getFullYear()}-${pad2(today.getMonth() + 1)}-${pad2(today.getDate())}`;
 }
 
-// === Group sessions by displayDate ===
-function groupSessionsByDate(sessions: Session[]): GroupedSessions {
-  return sessions.reduce((groups: GroupedSessions, session) => {
-    const { displayDate } = session;
-    if (!groups[displayDate]) groups[displayDate] = [];
-    groups[displayDate].push(session);
-    return groups;
-  }, {});
-}
-
 // === Render the sessions list ===
-function renderSessionsList(sessions: Session[], dateString: string): void {
+function renderSessionsList(sessions: Session[], selectedDateString: string): void {
   const container = document.getElementById('session-list-container');
   if (!container) return;
+
+  // Sort sessions by timestamp descending (most recent first)
+  const sortedSessions = [...sessions].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+
+  // Group by ISO date (YYYY-MM-DD)
+  const groupedSessions: GroupedSessions = sortedSessions.reduce((groups, session) => {
+    const isoDate = session.timestamp.slice(0, 10);
+    if (!groups[isoDate]) groups[isoDate] = [];
+    groups[isoDate].push(session);
+    return groups;
+  }, {} as GroupedSessions);
+
+  // Sort date keys descending
+  const sortedDates = Object.keys(groupedSessions).sort((a, b) => b.localeCompare(a));
 
   let html = `
     <div class="date-picker-container">
@@ -88,25 +91,13 @@ function renderSessionsList(sessions: Session[], dateString: string): void {
       </div>
     `;
   } else {
-    const groupedSessions = groupSessionsByDate(sessions);
-    const sortedDates = Object.keys(groupedSessions).sort((a, b) => {
-      if (a === 'Unknown Date') return 1;
-      if (b === 'Unknown Date') return -1;
-      return new Date(b).getTime() - new Date(a).getTime();
-    });
-
-    sortedDates.forEach(date => {
+    for (const date of sortedDates) {
       const sessionsForDate = groupedSessions[date];
-      sessionsForDate.sort((a, b) => {
-        if (!/^\d{4}-\d{2}-\d{2}T\d{2}/.test(a.id) || !/^\d{4}-\d{2}-\d{2}T\d{2}/.test(b.id)) {
-          return a.id.localeCompare(b.id);
-        }
-        return b.id.localeCompare(a.id);
-      });
+      const displayDate = new Date(date).toDateString();
 
       html += `
         <div class="date-group">
-          <h2 class="date-header">${escapeHtml(date)}</h2>
+          <h2 class="date-header">${escapeHtml(displayDate)}</h2>
           <ul class="session-list">
       `;
 
@@ -114,6 +105,7 @@ function renderSessionsList(sessions: Session[], dateString: string): void {
         const baseUrl = (window as any).BASE_URL || '';
         const senderRole = session.metadata?.provider || 'assistant';
         const capitalizedSenderRole = capitalize(senderRole);
+        const { displayTime } = formatTimestamp(session.timestamp);
 
         html += `
           <li class="session-item">
@@ -127,7 +119,7 @@ function renderSessionsList(sessions: Session[], dateString: string): void {
                 }
                 <div class="session-footer">
                   <span class="session-id-small">${escapeHtml(session.id.substring(0, 8))}...</span>
-                  <span class="session-time-small">${escapeHtml(session.displayTime)}</span>
+                  <span class="session-time-small">${escapeHtml(displayTime)}</span>
                 </div>
               </div>
             </a>
@@ -136,16 +128,15 @@ function renderSessionsList(sessions: Session[], dateString: string): void {
       });
 
       html += `</ul></div>`;
-    });
+    }
   }
 
   html += `</div>`;
   container.innerHTML = html;
 
-  // === Reattach date picker listener ===
   const datePicker = document.getElementById('date-picker') as HTMLInputElement;
   if (datePicker) {
-    if (!datePicker.value) datePicker.value = dateString;
+    if (!datePicker.value) datePicker.value = selectedDateString;
     datePicker.addEventListener('change', handleDateChange);
   }
 }
@@ -160,13 +151,10 @@ async function fetchAndDisplaySessions(dateString?: string): Promise<void> {
     const sessions: Session[] = sessionData.map((session: { static_id: string; most_recent_message: MostRecentMessage }) => {
       const id = session.static_id;
       const timestamp = session.most_recent_message?.starttime || id;
-      const { displayDate, displayTime } = formatTimestamp(timestamp);
 
       return {
         id,
         timestamp,
-        displayDate,
-        displayTime,
         message: session.most_recent_message?.message,
         metadata: {
           provider: session.most_recent_message?.sender_role || 'Assistant'

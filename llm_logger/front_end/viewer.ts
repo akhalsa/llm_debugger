@@ -23,6 +23,11 @@ type ViewModelEntry = {
     model: string;
     provider: string;
   };
+  tokenUsage: {
+    total: number | null;
+    prompt: number | null;
+    completion: number | null;
+  };
   contextMessages: ViewModelMessage[];
   newMessages: ViewModelMessage[];
 };
@@ -72,6 +77,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     container.innerHTML = `
       <div>
         <div><strong>Time:</strong> ${entry.startTime}</div>
+        <div><strong>Model:</strong> ${entry.metadata.model} (${entry.metadata.provider})</div>
+        <div><strong>Latency:</strong> ${entry.latencyMs === "Unknown" ? "Unknown" : `${entry.latencyMs}ms`}</div>
+        <div><strong>Token Usage:</strong> ${entry.tokenUsage.total !== null ? `${entry.tokenUsage.total} tokens total` : "Unknown"} 
+          ${entry.tokenUsage.prompt !== null ? `(${entry.tokenUsage.prompt} prompt, ${entry.tokenUsage.completion} completion)` : ""}
+        </div>
         <div class="context-section">
           <button class="toggle-context">Show Context Messages</button>
           <ul class="context-list" style="display: none;">
@@ -177,6 +187,14 @@ function parseLogEntry(entry: any, index: number, prevEntry?: any): ViewModelEnt
 
   const messages = extractMessages(entry);
 
+  // Extract token usage information
+  const tokenUsage = {
+    total: entry.response?.usage?.total_tokens || null,
+    prompt: entry.response?.usage?.prompt_tokens || null,
+    completion: entry.response?.usage?.completion_tokens || null
+  };
+
+
   let contextMessages: ViewModelMessage[] = [];
   let newMessages: ViewModelMessage[] = [];
 
@@ -197,6 +215,7 @@ function parseLogEntry(entry: any, index: number, prevEntry?: any): ViewModelEnt
       model: entry.response?.model || entry.request_body?.kwargs?.model || "unknown",
       provider: entry.provider || "unknown",
     },
+    tokenUsage,
     contextMessages,
     newMessages,
   };

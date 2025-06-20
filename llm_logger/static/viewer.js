@@ -48,6 +48,11 @@ document.addEventListener("DOMContentLoaded", () => __awaiter(void 0, void 0, vo
         container.innerHTML = `
       <div>
         <div><strong>Time:</strong> ${entry.startTime}</div>
+        <div><strong>Model:</strong> ${entry.metadata.model} (${entry.metadata.provider})</div>
+        <div><strong>Latency:</strong> ${entry.latencyMs === "Unknown" ? "Unknown" : `${entry.latencyMs}ms`}</div>
+        <div><strong>Token Usage:</strong> ${entry.tokenUsage.total !== null ? `${entry.tokenUsage.total} tokens total` : "Unknown"} 
+          ${entry.tokenUsage.prompt !== null ? `(${entry.tokenUsage.prompt} prompt, ${entry.tokenUsage.completion} completion)` : ""}
+        </div>
         <div class="context-section">
           <button class="toggle-context">Show Context Messages</button>
           <ul class="context-list" style="display: none;">
@@ -139,12 +144,18 @@ document.addEventListener("DOMContentLoaded", () => __awaiter(void 0, void 0, vo
     yield loadAndRenderSession();
 }));
 function parseLogEntry(entry, index, prevEntry) {
-    var _a, _b, _c, _d;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
     const latency = (_a = entry.latency_ms) !== null && _a !== void 0 ? _a : computeLatency(entry);
     const startTime = entry.start_time
         ? new Date(entry.start_time).toLocaleString()
         : "Unknown";
     const messages = extractMessages(entry);
+    // Extract token usage information
+    const tokenUsage = {
+        total: ((_c = (_b = entry.response) === null || _b === void 0 ? void 0 : _b.usage) === null || _c === void 0 ? void 0 : _c.total_tokens) || null,
+        prompt: ((_e = (_d = entry.response) === null || _d === void 0 ? void 0 : _d.usage) === null || _e === void 0 ? void 0 : _e.prompt_tokens) || null,
+        completion: ((_g = (_f = entry.response) === null || _f === void 0 ? void 0 : _f.usage) === null || _g === void 0 ? void 0 : _g.completion_tokens) || null
+    };
     let contextMessages = [];
     let newMessages = [];
     if (index === 0) {
@@ -161,9 +172,10 @@ function parseLogEntry(entry, index, prevEntry) {
         startTime,
         latencyMs: latency,
         metadata: {
-            model: ((_b = entry.response) === null || _b === void 0 ? void 0 : _b.model) || ((_d = (_c = entry.request_body) === null || _c === void 0 ? void 0 : _c.kwargs) === null || _d === void 0 ? void 0 : _d.model) || "unknown",
+            model: ((_h = entry.response) === null || _h === void 0 ? void 0 : _h.model) || ((_k = (_j = entry.request_body) === null || _j === void 0 ? void 0 : _j.kwargs) === null || _k === void 0 ? void 0 : _k.model) || "unknown",
             provider: entry.provider || "unknown",
         },
+        tokenUsage,
         contextMessages,
         newMessages,
     };
